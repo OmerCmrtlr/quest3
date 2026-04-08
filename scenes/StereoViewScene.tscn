@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://fbrnmf23wfff"]
+
+[ext_resource type="Script" path="res://scripts/stereo/Stereo3DViewer.cs" id="1_stereo"]
+
+[sub_resource type="QuadMesh" id="1_quad_left"]
+size = Vector2(1, 1)
+
+[sub_resource type="QuadMesh" id="2_quad_right"]
+size = Vector2(1, 1)
+
+[sub_resource type="QuadMesh" id="3_quad_main"]
+size = Vector2(1, 1)
+
+[node name="StereoViewScene" type="Node3D"]
+script = ExtResource("1_stereo")
+StartOnReady = true
+EnableLocalCameraFallback = false
+OutputWidth = 0
+OutputHeight = 0
+MatchWindowSizeAtRuntime = true
+MeshDistanceMeters = 2.0
+EyePlaneFillScale = 1.15
+MainPlaneFillScale = 1.2
+UseLeftEyeForMainDisplay = true
+
+[node name="MainDisplayCamera" type="Camera3D" parent="."]
+current = true
+fov = 75.0
+
+[node name="MainDisplayMesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("3_quad_main")
+position = Vector3(0, 0, -2)
+
+[node name="LeftEyeViewport" type="SubViewport" parent="."]
+size = Vector2i(1280, 720)
+render_target_update_mode = 4
+
+[node name="LeftEyeRoot" type="Node3D" parent="LeftEyeViewport"]
+
+[node name="LeftEyeCamera" type="Camera3D" parent="LeftEyeViewport/LeftEyeRoot"]
+current = true
+fov = 75.0
+
+[node name="LeftEyeVideoMesh" type="MeshInstance3D" parent="LeftEyeViewport/LeftEyeRoot"]
+mesh = SubResource("1_quad_left")
+position = Vector3(0, 0, -2)
+
+[node name="RightEyeViewport" type="SubViewport" parent="."]
+size = Vector2i(1280, 720)
+render_target_update_mode = 4
+
+[node name="RightEyeRoot" type="Node3D" parent="RightEyeViewport"]
+
+[node name="RightEyeCamera" type="Camera3D" parent="RightEyeViewport/RightEyeRoot"]
+current = true
+fov = 75.0
+
+[node name="RightEyeVideoMesh" type="MeshInstance3D" parent="RightEyeViewport/RightEyeRoot"]
+mesh = SubResource("2_quad_right")
+position = Vector3(0, 0, -2)

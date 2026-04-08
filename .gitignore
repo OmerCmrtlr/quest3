@@ -1,0 +1,8 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Build/output artifacts
+/build/
+**/bin/
+**/obj/
