@@ -6,3 +6,6 @@
 /build/
 **/bin/
 **/obj/
+
+# Keep nested gstreamer cpp source out of this repo snapshot
+/addons/gstreamer/godot-cpp/
