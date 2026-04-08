@@ -5,7 +5,4 @@
 [node name="ExternalTextureScene" type="Node"]
 script = ExtResource("1_ext")
 AutoStart = true
-CameraIndex = 0
-PreferNewestFeedOnStart = true
-EnableLocalCameraFallback = false
 AndroidCameraSingletonName = "QuestExternalTexture"

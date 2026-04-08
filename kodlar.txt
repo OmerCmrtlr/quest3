@@ -1,35 +1,20 @@
-# Quest3 External Texture Only - Çalışan Kodlar ve Mimari
+# Quest3 External Texture Only - Çalışan Kodlar (v1.0.0+)
 
-Bu dosya, projedeki external texture only (fallback kapalı) çalışan çekirdek yapıyı tek yerde toplar.
+Bu doküman, projedeki güncel **strict external texture only** mimarisini ve çalışan çekirdek kodları tek dosyada toplar.
 
-## 1) Mimari Özeti
+## Uygulanan Kurallar
 
-- Proje 2D split UI kullanmaz; ana akış Node3D + SubViewport + Mesh üzerindedir.
-- İki göz için iki ayrı SubViewport vardır:
-  - LeftEyeViewport
-  - RightEyeViewport
-- Her viewport içinde aynı görüntü kaynağı 3D mesh'e basılır.
-- Ana ekranda (tablet / normal display) tek göz (sol göz) full-screen gösterilir.
-- Kaynak zorlaması:
-  - Öncelik ve zorunluluk: Android singleton `QuestExternalTexture`
-  - Beklenen metod: `get_camera_texture()`
-  - Beklenen tip: `Texture2D`
-- Fallback bu proje modunda kapalıdır (`EnableLocalCameraFallback=false`).
-
-## 2) Akış Nasıl Çalışıyor?
-
-1. `Stereo3DViewer` `_Ready()` içinde sahneyi çözer, materyalleri kurar.
-2. `StartSession()` çağrısında `ConnectSourceTexture()` çalışır.
-3. Script Android'de `Engine.HasSingleton("QuestExternalTexture")` kontrolü yapar.
-4. Singleton varsa `get_camera_texture()` çağrılır ve dönen `Texture2D` iki eye mesh shader materyaline bağlanır.
-5. Her frame'de eye viewport çıktılarından biri (`UseLeftEyeForMainDisplay=true`) ana mesh'e basılır.
-6. Pencere/cihaz boyutu runtime alınır (`MatchWindowSizeAtRuntime=true`) ve mesh frustum'u dolduracak şekilde ölçeklenir.
+- Fallback kaldırıldı (local camera yolu yok).
+- Kaynak yalnızca Android singleton:
+  - `QuestExternalTexture`
+  - `get_camera_texture()`
+  - `Texture2D`
+- Stereo üretim: iki `SubViewport`, aynı origin, shader ile UV shift.
+- Tablet/default görünüm: tek göz tam ekran (`UseLeftEyeForMainDisplay`).
 
 ---
 
-## 3) Çalışan Çekirdek Dosyalar (Tam İçerik)
-
-### FILE: project.godot
+## FILE: project.godot
 
 ; Engine configuration file.
 ; It's best edited using the editor UI and not directly,
@@ -61,7 +46,9 @@ project/assembly_name="Quest3"
 rendering_device/driver.windows="d3d12"
 textures/vram_compression/import_etc2_astc=true
 
-### FILE: Quest3.csproj
+---
+
+## FILE: Quest3.csproj
 
 <Project Sdk="Godot.NET.Sdk/4.6.0">
   <PropertyGroup>
@@ -72,7 +59,9 @@ textures/vram_compression/import_etc2_astc=true
   </PropertyGroup>
 </Project>
 
-### FILE: scenes/StereoViewScene.tscn
+---
+
+## FILE: scenes/StereoViewScene.tscn
 
 [gd_scene format=3 uid="uid://fbrnmf23wfff"]
 
@@ -90,7 +79,6 @@ size = Vector2(1, 1)
 [node name="StereoViewScene" type="Node3D"]
 script = ExtResource("1_stereo")
 StartOnReady = true
-EnableLocalCameraFallback = false
 OutputWidth = 0
 OutputHeight = 0
 MatchWindowSizeAtRuntime = true
@@ -135,7 +123,9 @@ fov = 75.0
 mesh = SubResource("2_quad_right")
 position = Vector3(0, 0, -2)
 
-### FILE: scenes/ExternalTextureScene.tscn
+---
+
+## FILE: scenes/ExternalTextureScene.tscn
 
 [gd_scene format=3]
 
@@ -144,12 +134,11 @@ position = Vector3(0, 0, -2)
 [node name="ExternalTextureScene" type="Node"]
 script = ExtResource("1_ext")
 AutoStart = true
-CameraIndex = 0
-PreferNewestFeedOnStart = true
-EnableLocalCameraFallback = false
 AndroidCameraSingletonName = "QuestExternalTexture"
 
-### FILE: scripts/stereo/Stereo3DViewer.cs
+---
+
+## FILE: scripts/stereo/Stereo3DViewer.cs
 
 using Godot;
 using System;
@@ -158,9 +147,6 @@ public partial class Stereo3DViewer : Node3D
 {
     [ExportGroup("Camera Source")]
     [Export] public bool StartOnReady = true;
-    [Export] public int CameraIndex = 0;
-    [Export] public bool PreferNewestFeedOnStart = true;
-    [Export] public bool EnableLocalCameraFallback = false;
     [Export] public string AndroidCameraSingletonName = "QuestExternalTexture";
 
     [ExportGroup("Stereo View")]
@@ -196,9 +182,6 @@ public partial class Stereo3DViewer : Node3D
     private MeshInstance3D _rightEyeMesh;
     private Camera3D _mainDisplayCamera;
     private MeshInstance3D _mainDisplayMesh;
-
-    private CameraFeed _activeFeed;
-    private CameraTexture _cameraTexture;
 
     private Shader _sourceShader;
     private ShaderMaterial _leftSourceMaterial;
@@ -272,14 +255,6 @@ void fragment() {
         _sessionActive = false;
         _sourceConnected = false;
         _reconnectTimer = 0f;
-
-        if (_activeFeed != null)
-        {
-            try { _activeFeed.FeedIsActive = false; } catch { }
-            _activeFeed = null;
-        }
-
-        _cameraTexture = null;
         ApplySourceTexture(null);
     }
 
@@ -514,41 +489,8 @@ void fragment() {
             return true;
         }
 
-        if (!EnableLocalCameraFallback)
-        {
-            WarnSourceOnce("[Stereo3D] Android external texture singleton bulunamadı; fallback kapalı.");
-            return false;
-        }
-
-        CameraServer.SetMonitoringFeeds(true);
-        var feeds = CameraServer.Feeds();
-        if (feeds == null || feeds.Count == 0)
-        {
-            WarnSourceOnce("[Stereo3D] Kamera feed bulunamadı. Camera Feed ve izinleri kontrol et.");
-            return false;
-        }
-
-        int selectedIndex = Mathf.Clamp(CameraIndex, 0, feeds.Count - 1);
-        if (PreferNewestFeedOnStart && CameraIndex <= 0 && feeds.Count > 1)
-            selectedIndex = feeds.Count - 1;
-
-        CameraFeed feed = feeds[selectedIndex];
-        if (!TryActivateFeed(feed))
-        {
-            WarnSourceOnce("[Stereo3D] Kamera feed aktif edilemedi. Format/izin kontrolü gerekli.");
-            return false;
-        }
-
-        _activeFeed = feed;
-        _cameraTexture = new CameraTexture
-        {
-            CameraFeedId = feed.GetId(),
-            CameraIsActive = true,
-        };
-
-        ApplySourceTexture(_cameraTexture);
-        GD.Print($"[Stereo3D] Lokal kamera feed bağlandı. index={selectedIndex}");
-        return true;
+        WarnSourceOnce($"[Stereo3D] External texture singleton '{AndroidCameraSingletonName}' bulunamadı veya get_camera_texture() Texture2D döndürmedi.");
+        return false;
     }
 
     private Texture2D TryGetTextureFromAndroidSingleton()
@@ -636,54 +578,6 @@ void fragment() {
         _mainDisplayMaterial.AlbedoTexture = tex ?? _blackFallbackTexture;
     }
 
-    private static bool TryActivateFeed(CameraFeed feed)
-    {
-        if (feed == null)
-            return false;
-
-        try
-        {
-            if (!feed.FeedIsActive)
-            {
-                if (!TryPrepareFeedFormat(feed))
-                    return false;
-
-                feed.FeedIsActive = true;
-            }
-
-            return feed.FeedIsActive;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private static bool TryPrepareFeedFormat(CameraFeed feed)
-    {
-        try
-        {
-            Variant formatsVariant = feed.Call("get_formats");
-            if (formatsVariant.VariantType != Variant.Type.Array)
-                return false;
-
-            var formats = formatsVariant.AsGodotArray();
-            if (formats.Count == 0)
-                return false;
-
-            Variant firstFormat = formats[0];
-            if (firstFormat.VariantType != Variant.Type.Dictionary)
-                return false;
-
-            feed.Call("set_format", 0, firstFormat.AsGodotDictionary());
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     private void WarnSourceOnce(string message)
     {
         ulong now = Time.GetTicksMsec();
@@ -708,7 +602,9 @@ void fragment() {
     }
 }
 
-### FILE: scripts/external/CameraExternalTextureSender.cs
+---
+
+## FILE: scripts/external/CameraExternalTextureSender.cs
 
 using Godot;
 using System;
@@ -716,13 +612,8 @@ using System;
 public partial class CameraExternalTextureSender : Node
 {
     [Export] public bool AutoStart = true;
-    [Export] public int CameraIndex = 0;
-    [Export] public bool PreferNewestFeedOnStart = true;
-    [Export] public bool EnableLocalCameraFallback = false;
     [Export] public string AndroidCameraSingletonName = "QuestExternalTexture";
 
-    private CameraFeed _cameraFeed;
-    private CameraTexture _cameraTexture;
     private Texture2D _currentTexture;
     private bool _running;
 
@@ -748,41 +639,7 @@ public partial class CameraExternalTextureSender : Node
             return;
         }
 
-        if (!EnableLocalCameraFallback)
-        {
-            GD.PrintErr("[ExtTexture] Android singleton bulunamadı ve local fallback kapalı.");
-            return;
-        }
-
-        CameraServer.SetMonitoringFeeds(true);
-        var feeds = CameraServer.Feeds();
-        if (feeds == null || feeds.Count == 0)
-        {
-            GD.PrintErr("[ExtTexture] Kamera feed bulunamadı. Camera Feed ve izinleri kontrol et.");
-            return;
-        }
-
-        int idx = Mathf.Clamp(CameraIndex, 0, feeds.Count - 1);
-        if (PreferNewestFeedOnStart && CameraIndex <= 0 && feeds.Count > 1)
-            idx = feeds.Count - 1;
-
-        CameraFeed feed = feeds[idx];
-        if (!TryActivateFeed(feed))
-        {
-            GD.PrintErr("[ExtTexture] Kamera feed aktif edilemedi.");
-            return;
-        }
-
-        _cameraFeed = feed;
-        _cameraTexture = new CameraTexture
-        {
-            CameraFeedId = feed.GetId(),
-            CameraIsActive = true,
-        };
-
-        _currentTexture = _cameraTexture;
-        _running = true;
-        GD.Print($"[ExtTexture] Lokal kamera feed bağlı. index={idx}");
+        GD.PrintErr($"[ExtTexture] External texture singleton '{AndroidCameraSingletonName}' bulunamadı veya get_camera_texture() Texture2D döndürmedi.");
     }
 
     public void StopCapture()
@@ -791,14 +648,6 @@ public partial class CameraExternalTextureSender : Node
             return;
 
         _running = false;
-
-        if (_cameraFeed != null)
-        {
-            try { _cameraFeed.FeedIsActive = false; } catch { }
-            _cameraFeed = null;
-        }
-
-        _cameraTexture = null;
         _currentTexture = null;
     }
 
@@ -848,54 +697,6 @@ public partial class CameraExternalTextureSender : Node
         }
     }
 
-    private static bool TryActivateFeed(CameraFeed feed)
-    {
-        if (feed == null)
-            return false;
-
-        try
-        {
-            if (!feed.FeedIsActive)
-            {
-                if (!TryPrepareFeedFormat(feed))
-                    return false;
-
-                feed.FeedIsActive = true;
-            }
-
-            return feed.FeedIsActive;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private static bool TryPrepareFeedFormat(CameraFeed feed)
-    {
-        try
-        {
-            Variant formatsVariant = feed.Call("get_formats");
-            if (formatsVariant.VariantType != Variant.Type.Array)
-                return false;
-
-            var formats = formatsVariant.AsGodotArray();
-            if (formats.Count == 0)
-                return false;
-
-            Variant firstFormat = formats[0];
-            if (firstFormat.VariantType != Variant.Type.Dictionary)
-                return false;
-
-            feed.Call("set_format", 0, firstFormat.AsGodotDictionary());
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     private static void RequestCameraPermissionIfNeeded()
     {
         try
@@ -910,242 +711,68 @@ public partial class CameraExternalTextureSender : Node
     }
 }
 
-### FILE: export_presets.cfg
-
-[preset.0]
-
-name="Quest3"
-platform="Android"
-runnable=true
-dedicated_server=false
-custom_features=""
-export_filter="all_resources"
-include_filter=""
-exclude_filter=""
-export_path="build/android/Quest3-tablet-debug.apk"
-patches=PackedStringArray()
-patch_delta_encoding=false
-patch_delta_compression_level_zstd=19
-patch_delta_min_reduction=0.1
-patch_delta_include_filters="*"
-patch_delta_exclude_filters=""
-encryption_include_filters=""
-encryption_exclude_filters=""
-seed=0
-encrypt_pck=false
-encrypt_directory=false
-script_export_mode=2
-
-[preset.0.options]
-
-custom_template/debug=""
-custom_template/release=""
-gradle_build/use_gradle_build=true
-gradle_build/gradle_build_directory=""
-gradle_build/android_source_template=""
-gradle_build/compress_native_libraries=false
-gradle_build/export_format=0
-gradle_build/min_sdk=""
-gradle_build/target_sdk=""
-gradle_build/custom_theme_attributes={}
-architectures/armeabi-v7a=false
-architectures/arm64-v8a=true
-architectures/x86=false
-architectures/x86_64=false
-version/code=1
-version/name=""
-package/unique_name="com.bnfnc.quest3"
-package/name="Quest3"
-package/signed=true
-package/app_category=2
-package/retain_data_on_uninstall=false
-package/exclude_from_recents=false
-package/show_in_android_tv=false
-package/show_in_app_library=true
-package/show_as_launcher_app=true
-launcher_icons/main_192x192=""
-launcher_icons/adaptive_foreground_432x432=""
-launcher_icons/adaptive_background_432x432=""
-launcher_icons/adaptive_monochrome_432x432=""
-graphics/opengl_debug=false
-shader_baker/enabled=false
-xr_features/xr_mode=0
-gesture/swipe_to_dismiss=false
-screen/immersive_mode=true
-screen/edge_to_edge=false
-screen/support_small=true
-screen/support_normal=true
-screen/support_large=true
-screen/support_xlarge=true
-screen/background_color=Color(0, 0, 0, 1)
-user_data_backup/allow=false
-command_line/extra_args=""
-apk_expansion/enable=false
-apk_expansion/SALT=""
-apk_expansion/public_key=""
-permissions/custom_permissions=PackedStringArray()
-permissions/access_checkin_properties=false
-permissions/access_coarse_location=false
-permissions/access_fine_location=false
-permissions/access_location_extra_commands=false
-permissions/access_media_location=false
-permissions/access_mock_location=false
-permissions/access_network_state=false
-permissions/access_surface_flinger=false
-permissions/access_wifi_state=false
-permissions/account_manager=false
-permissions/add_voicemail=false
-permissions/authenticate_accounts=false
-permissions/battery_stats=false
-permissions/bind_accessibility_service=false
-permissions/bind_appwidget=false
-permissions/bind_device_admin=false
-permissions/bind_input_method=false
-permissions/bind_nfc_service=false
-permissions/bind_notification_listener_service=false
-permissions/bind_print_service=false
-permissions/bind_remoteviews=false
-permissions/bind_text_service=false
-permissions/bind_vpn_service=false
-permissions/bind_wallpaper=false
-permissions/bluetooth=false
-permissions/bluetooth_admin=false
-permissions/bluetooth_privileged=false
-permissions/brick=false
-permissions/broadcast_package_removed=false
-permissions/broadcast_sms=false
-permissions/broadcast_sticky=false
-permissions/broadcast_wap_push=false
-permissions/call_phone=false
-permissions/call_privileged=false
-permissions/camera=true
-permissions/capture_audio_output=false
-permissions/capture_secure_video_output=false
-permissions/capture_video_output=false
-permissions/change_component_enabled_state=false
-permissions/change_configuration=false
-permissions/change_network_state=false
-permissions/change_wifi_multicast_state=false
-permissions/change_wifi_state=false
-permissions/clear_app_cache=false
-permissions/clear_app_user_data=false
-permissions/control_location_updates=false
-permissions/delete_cache_files=false
-permissions/delete_packages=false
-permissions/device_power=false
-permissions/diagnostic=false
-permissions/disable_keyguard=false
-permissions/dump=false
-permissions/expand_status_bar=false
-permissions/factory_test=false
-permissions/flashlight=false
-permissions/force_back=false
-permissions/get_accounts=false
-permissions/get_package_size=false
-permissions/get_tasks=false
-permissions/get_top_activity_info=false
-permissions/global_search=false
-permissions/hardware_test=false
-permissions/inject_events=false
-permissions/install_location_provider=false
-permissions/install_packages=false
-permissions/install_shortcut=false
-permissions/internal_system_window=false
-permissions/internet=false
-permissions/kill_background_processes=false
-permissions/location_hardware=false
-permissions/manage_accounts=false
-permissions/manage_app_tokens=false
-permissions/manage_documents=false
-permissions/manage_external_storage=false
-permissions/manage_media=false
-permissions/master_clear=false
-permissions/media_content_control=false
-permissions/modify_audio_settings=false
-permissions/modify_phone_state=false
-permissions/mount_format_filesystems=false
-permissions/mount_unmount_filesystems=false
-permissions/nfc=false
-permissions/persistent_activity=false
-permissions/post_notifications=false
-permissions/process_outgoing_calls=false
-permissions/read_calendar=false
-permissions/read_call_log=false
-permissions/read_contacts=false
-permissions/read_external_storage=false
-permissions/read_frame_buffer=false
-permissions/read_history_bookmarks=false
-permissions/read_input_state=false
-permissions/read_logs=false
-permissions/read_media_audio=false
-permissions/read_media_images=false
-permissions/read_media_video=false
-permissions/read_media_visual_user_selected=false
-permissions/read_phone_state=false
-permissions/read_profile=false
-permissions/read_sms=false
-permissions/read_social_stream=false
-permissions/read_sync_settings=false
-permissions/read_sync_stats=false
-permissions/read_user_dictionary=false
-permissions/reboot=false
-permissions/receive_boot_completed=false
-permissions/receive_mms=false
-permissions/receive_sms=false
-permissions/receive_wap_push=false
-permissions/record_audio=false
-permissions/reorder_tasks=false
-permissions/restart_packages=false
-permissions/send_respond_via_message=false
-permissions/send_sms=false
-permissions/set_activity_watcher=false
-permissions/set_alarm=false
-permissions/set_always_finish=false
-permissions/set_animation_scale=false
-permissions/set_debug_app=false
-permissions/set_orientation=false
-permissions/set_pointer_speed=false
-permissions/set_preferred_applications=false
-permissions/set_process_limit=false
-permissions/set_time=false
-permissions/set_time_zone=false
-permissions/set_wallpaper=false
-permissions/set_wallpaper_hints=false
-permissions/signal_persistent_processes=false
-permissions/status_bar=false
-permissions/subscribed_feeds_read=false
-permissions/subscribed_feeds_write=false
-permissions/system_alert_window=false
-permissions/transmit_ir=false
-permissions/uninstall_shortcut=false
-permissions/update_device_stats=false
-permissions/use_credentials=false
-permissions/use_sip=false
-permissions/vibrate=false
-permissions/wake_lock=false
-permissions/write_apn_settings=false
-permissions/write_calendar=false
-permissions/write_call_log=false
-permissions/write_contacts=false
-permissions/write_external_storage=false
-permissions/write_gservices=false
-permissions/write_history_bookmarks=false
-permissions/write_profile=false
-permissions/write_secure_settings=false
-permissions/write_settings=false
-permissions/write_sms=false
-permissions/write_social_stream=false
-permissions/write_sync_settings=false
-permissions/write_user_dictionary=false
-dotnet/android_use_linux_bionic=false
-dotnet/include_scripts_content=false
-dotnet/include_debug_symbols=true
-dotnet/embed_build_outputs=false
-
 ---
 
-## 4) Önemli Çalışma Notu
+## FILE: reference_archives/quest-3-external-texture-architecture/QuestExternalTexture.java
 
-Bu proje external texture only modda yapılandırıldı. Yani Android plugin tarafında `QuestExternalTexture` singleton yoksa görüntü vermeyecektir.
+package com.bnfnc.quest3;
 
-Gerekli Java köprüsü implement edilince akış tamamıyla external texture üstünden çalışır.
+import android.graphics.SurfaceTexture;
+import android.opengl.GLES11Ext;
+import android.opengl.GLES20;
+
+import org.godotengine.godot.Godot;
+import org.godotengine.godot.plugin.GodotPlugin;
+
+/**
+ * QuestExternalTexture – Godot Android Plugin (template)
+ *
+ * Engine.GetSingleton("QuestExternalTexture") üzerinden erişilir.
+ * get_camera_texture() metodu Godot tarafına external texture temsilcisini döndürmelidir.
+ */
+public class QuestExternalTexture extends GodotPlugin {
+
+    private int _glTextureId = -1;
+    private long _godotTextureRid = 0;
+    private SurfaceTexture _surfaceTexture;
+
+    public QuestExternalTexture(Godot godot) {
+        super(godot);
+    }
+
+    @Override
+    public String getPluginName() {
+        return "QuestExternalTexture";
+    }
+
+    /**
+     * Godot C# tarafı: singleton.Call("get_camera_texture")
+     *
+     * Not: Burada döndürülen değerin Godot tarafında Texture2D olarak
+     * kullanılabilmesi için plugin tarafında doğru Godot texture köprüsü
+     * tamamlanmalıdır.
+     */
+    public long get_camera_texture() {
+        if (_glTextureId == -1) {
+            initExternalTexture();
+        }
+        return _godotTextureRid;
+    }
+
+    private void initExternalTexture() {
+        int[] ids = new int[1];
+        GLES20.glGenTextures(1, ids, 0);
+        _glTextureId = ids[0];
+
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, _glTextureId);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+
+        _surfaceTexture = new SurfaceTexture(_glTextureId);
+        _surfaceTexture.setOnFrameAvailableListener(st -> st.updateTexImage());
+
+        // TODO 1: SurfaceTexture'ı Quest kamera kaynağına bağla.
+        // TODO 2: Godot RenderingServer tarafında external texture kaydı oluştur.
+        // TODO 3: Oluşan RID/ID değerini _godotTextureRid alanına yaz.
+    }
+}

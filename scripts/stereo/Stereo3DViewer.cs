@@ -5,9 +5,6 @@ public partial class Stereo3DViewer : Node3D
 {
     [ExportGroup("Camera Source")]
     [Export] public bool StartOnReady = true;
-    [Export] public int CameraIndex = 0;
-    [Export] public bool PreferNewestFeedOnStart = true;
-    [Export] public bool EnableLocalCameraFallback = false;
     [Export] public string AndroidCameraSingletonName = "QuestExternalTexture";
 
     [ExportGroup("Stereo View")]
@@ -43,9 +40,6 @@ public partial class Stereo3DViewer : Node3D
     private MeshInstance3D _rightEyeMesh;
     private Camera3D _mainDisplayCamera;
     private MeshInstance3D _mainDisplayMesh;
-
-    private CameraFeed _activeFeed;
-    private CameraTexture _cameraTexture;
 
     private Shader _sourceShader;
     private ShaderMaterial _leftSourceMaterial;
@@ -119,14 +113,6 @@ void fragment() {
         _sessionActive = false;
         _sourceConnected = false;
         _reconnectTimer = 0f;
-
-        if (_activeFeed != null)
-        {
-            try { _activeFeed.FeedIsActive = false; } catch { }
-            _activeFeed = null;
-        }
-
-        _cameraTexture = null;
         ApplySourceTexture(null);
     }
 
@@ -361,41 +347,8 @@ void fragment() {
             return true;
         }
 
-        if (!EnableLocalCameraFallback)
-        {
-            WarnSourceOnce("[Stereo3D] Android external texture singleton bulunamadı; fallback kapalı.");
-            return false;
-        }
-
-        CameraServer.SetMonitoringFeeds(true);
-        var feeds = CameraServer.Feeds();
-        if (feeds == null || feeds.Count == 0)
-        {
-            WarnSourceOnce("[Stereo3D] Kamera feed bulunamadı. Camera Feed ve izinleri kontrol et.");
-            return false;
-        }
-
-        int selectedIndex = Mathf.Clamp(CameraIndex, 0, feeds.Count - 1);
-        if (PreferNewestFeedOnStart && CameraIndex <= 0 && feeds.Count > 1)
-            selectedIndex = feeds.Count - 1;
-
-        CameraFeed feed = feeds[selectedIndex];
-        if (!TryActivateFeed(feed))
-        {
-            WarnSourceOnce("[Stereo3D] Kamera feed aktif edilemedi. Format/izin kontrolü gerekli.");
-            return false;
-        }
-
-        _activeFeed = feed;
-        _cameraTexture = new CameraTexture
-        {
-            CameraFeedId = feed.GetId(),
-            CameraIsActive = true,
-        };
-
-        ApplySourceTexture(_cameraTexture);
-        GD.Print($"[Stereo3D] Lokal kamera feed bağlandı. index={selectedIndex}");
-        return true;
+        WarnSourceOnce($"[Stereo3D] External texture singleton '{AndroidCameraSingletonName}' bulunamadı veya get_camera_texture() Texture2D döndürmedi.");
+        return false;
     }
 
     private Texture2D TryGetTextureFromAndroidSingleton()
@@ -481,54 +434,6 @@ void fragment() {
         }
 
         _mainDisplayMaterial.AlbedoTexture = tex ?? _blackFallbackTexture;
-    }
-
-    private static bool TryActivateFeed(CameraFeed feed)
-    {
-        if (feed == null)
-            return false;
-
-        try
-        {
-            if (!feed.FeedIsActive)
-            {
-                if (!TryPrepareFeedFormat(feed))
-                    return false;
-
-                feed.FeedIsActive = true;
-            }
-
-            return feed.FeedIsActive;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private static bool TryPrepareFeedFormat(CameraFeed feed)
-    {
-        try
-        {
-            Variant formatsVariant = feed.Call("get_formats");
-            if (formatsVariant.VariantType != Variant.Type.Array)
-                return false;
-
-            var formats = formatsVariant.AsGodotArray();
-            if (formats.Count == 0)
-                return false;
-
-            Variant firstFormat = formats[0];
-            if (firstFormat.VariantType != Variant.Type.Dictionary)
-                return false;
-
-            feed.Call("set_format", 0, firstFormat.AsGodotDictionary());
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
     }
 
     private void WarnSourceOnce(string message)

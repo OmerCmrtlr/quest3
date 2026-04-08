@@ -14,12 +14,12 @@ Bu proje, **2D split/overlay kullanmadan** kamera görüntüsünü 3D uzayda mes
 
 - Ana script: `scripts/stereo/Stereo3DViewer.cs`
   - Öncelik: Android singleton external texture (`QuestExternalTexture.get_camera_texture()`)
-  - Fallback: kapalı (`EnableLocalCameraFallback=false`)
+  - Fallback: yok (external texture zorunlu)
   - Stereo UV shift/zoom ayarları shader ile uygulanır.
 
 - Yardımcı script: `scripts/external/CameraExternalTextureSender.cs`
   - Artık SHM/UDP sender değildir.
-  - External texture kaynağını (Android singleton veya local feed) sağlayan test node’udur.
+  - External texture singleton kaynağını test eden yardımcı node’dur.
 
 ## Bu Akışta Neler Yok?
 

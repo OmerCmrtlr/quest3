@@ -37,13 +37,13 @@ Bir Android singleton sağlanabiliyorsa script şu metodu arar:
 - Beklenen dönüş: `Texture2D`
 
 Bu projede `EnableLocalCameraFallback=false` kullanıldığı için singleton yoksa görüntü siyah kalır.
+Bu nedenle Java tarafındaki `QuestExternalTexture` singleton implementasyonu zorunludur.
 
 ## Hızlı Test
 
 1. `StereoViewScene` çalıştır.
 2. Görüntü geliyorsa 3D mesh akışı hazırdır.
 3. Gerekirse inspector’dan:
-   - `CameraIndex`
    - `EyeTextureShiftPixels`
    - `EyeTextureZoom`
    - `CenterOffsetPixels`

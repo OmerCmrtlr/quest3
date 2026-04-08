@@ -4,13 +4,8 @@ using System;
 public partial class CameraExternalTextureSender : Node
 {
     [Export] public bool AutoStart = true;
-    [Export] public int CameraIndex = 0;
-    [Export] public bool PreferNewestFeedOnStart = true;
-    [Export] public bool EnableLocalCameraFallback = false;
     [Export] public string AndroidCameraSingletonName = "QuestExternalTexture";
 
-    private CameraFeed _cameraFeed;
-    private CameraTexture _cameraTexture;
     private Texture2D _currentTexture;
     private bool _running;
 
@@ -36,41 +31,7 @@ public partial class CameraExternalTextureSender : Node
             return;
         }
 
-        if (!EnableLocalCameraFallback)
-        {
-            GD.PrintErr("[ExtTexture] Android singleton bulunamadı ve local fallback kapalı.");
-            return;
-        }
-
-        CameraServer.SetMonitoringFeeds(true);
-        var feeds = CameraServer.Feeds();
-        if (feeds == null || feeds.Count == 0)
-        {
-            GD.PrintErr("[ExtTexture] Kamera feed bulunamadı. Camera Feed ve izinleri kontrol et.");
-            return;
-        }
-
-        int idx = Mathf.Clamp(CameraIndex, 0, feeds.Count - 1);
-        if (PreferNewestFeedOnStart && CameraIndex <= 0 && feeds.Count > 1)
-            idx = feeds.Count - 1;
-
-        CameraFeed feed = feeds[idx];
-        if (!TryActivateFeed(feed))
-        {
-            GD.PrintErr("[ExtTexture] Kamera feed aktif edilemedi.");
-            return;
-        }
-
-        _cameraFeed = feed;
-        _cameraTexture = new CameraTexture
-        {
-            CameraFeedId = feed.GetId(),
-            CameraIsActive = true,
-        };
-
-        _currentTexture = _cameraTexture;
-        _running = true;
-        GD.Print($"[ExtTexture] Lokal kamera feed bağlı. index={idx}");
+        GD.PrintErr($"[ExtTexture] External texture singleton '{AndroidCameraSingletonName}' bulunamadı veya get_camera_texture() Texture2D döndürmedi.");
     }
 
     public void StopCapture()
@@ -79,14 +40,6 @@ public partial class CameraExternalTextureSender : Node
             return;
 
         _running = false;
-
-        if (_cameraFeed != null)
-        {
-            try { _cameraFeed.FeedIsActive = false; } catch { }
-            _cameraFeed = null;
-        }
-
-        _cameraTexture = null;
         _currentTexture = null;
     }
 
@@ -133,54 +86,6 @@ public partial class CameraExternalTextureSender : Node
         {
             GD.PrintErr("[ExtTexture] Android singleton texture okuma hatası: " + e.Message);
             return null;
-        }
-    }
-
-    private static bool TryActivateFeed(CameraFeed feed)
-    {
-        if (feed == null)
-            return false;
-
-        try
-        {
-            if (!feed.FeedIsActive)
-            {
-                if (!TryPrepareFeedFormat(feed))
-                    return false;
-
-                feed.FeedIsActive = true;
-            }
-
-            return feed.FeedIsActive;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private static bool TryPrepareFeedFormat(CameraFeed feed)
-    {
-        try
-        {
-            Variant formatsVariant = feed.Call("get_formats");
-            if (formatsVariant.VariantType != Variant.Type.Array)
-                return false;
-
-            var formats = formatsVariant.AsGodotArray();
-            if (formats.Count == 0)
-                return false;
-
-            Variant firstFormat = formats[0];
-            if (firstFormat.VariantType != Variant.Type.Dictionary)
-                return false;
-
-            feed.Call("set_format", 0, firstFormat.AsGodotDictionary());
-            return true;
-        }
-        catch
-        {
-            return false;
         }
     }
 

@@ -45,7 +45,6 @@ Bu çalışma ortamında doğrulanan değerler:
 ## 6) Sorun Giderme
 
 - Siyah ekran: kamera izni reddedilmiş olabilir; Android ayarlarından izin ver.
-- Kamera gelmiyor: uygun `CameraIndex` seçilmemiş olabilir.
 - Java singleton kullanılacaksa:
   - singleton adı `QuestExternalTexture`
   - metod adı `get_camera_texture()`
