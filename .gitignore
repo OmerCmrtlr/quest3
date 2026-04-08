@@ -9,3 +9,4 @@
 
 # Keep nested gstreamer cpp source out of this repo snapshot
 /addons/gstreamer/godot-cpp/
+/addons/gstreamer/godot-cpp
