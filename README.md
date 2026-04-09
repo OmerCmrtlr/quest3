@@ -27,9 +27,52 @@ Bu proje, **2D split/overlay kullanmadan** kamera görüntüsünü 3D uzayda mes
 ## Hızlı Başlangıç
 
 1. Projeyi Godot’ta aç.
-2. Ana sahneyi çalıştır: `res://scenes/StereoViewScene.tscn`
-3. `StereoViewScene` içinde `NetworkStreamUrl` değerini **laptop kaynak URL’i** olacak şekilde aynı Wi‑Fi ağında ayarla (örn. RTSP/HTTP).
-4. Android plugin tarafında `QuestExternalTexture` singleton'ı aktif olmalı.
+2. Laptopta sender başlat (RTSP):
+
+  ```bash
+  cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+  ./tools/stream/start_rtsp_sender.sh /dev/video0
+  ```
+
+3. Ana sahneyi çalıştır: `res://scenes/StereoViewScene.tscn`
+4. Sahnede gömülü URL:
+
+  - `rtsp://192.168.2.207:8554/quest3`
+
+  IP değişirse `NetworkStreamUrl` değerini yeni laptop IP ile güncelle.
+5. Android plugin tarafında `QuestExternalTexture` singleton'ı aktif olmalı.
+
+## Sender Kontrol Komutları (Laptop)
+
+Durum:
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/stream/status_rtsp_sender.sh
+```
+
+Durdur:
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/stream/stop_rtsp_sender.sh
+```
+
+FFmpeg kurulu değilse:
+
+```bash
+sudo apt update
+sudo apt install -y ffmpeg v4l-utils
+```
+
+## Ağ Notu (Wi‑Fi / Hotspot)
+
+- Bu akış **aynı yerel ağ** (LAN) içinde çalışır, internet kotası tüketmez.
+- Wi‑Fi sinyali zayıfsa gecikme/artifakt olabilir.
+- Gecikmeyi azaltmak için:
+  - mümkünse 5 GHz kullan,
+  - cihazları AP/router’a yakın tut,
+  - gerekirse mobil hotspot ile kısa mesafe test yap.
 
 ## Not
 

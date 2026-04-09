@@ -34,6 +34,9 @@ Bu çalışma ortamında doğrulanan değerler:
 
 ## 4) Build Öncesi Test
 
+- Laptop sender çalışıyor mu?
+  - `./tools/stream/start_rtsp_sender.sh /dev/video0`
+  - `./tools/stream/status_rtsp_sender.sh`
 - `StereoViewScene` açıldığında görüntü 3D mesh üstünde geliyor mu?
 - Ortada çizgi / debug overlay / split 2D UI olmadığını doğrula.
 - `EyeTextureShiftPixels` ve `EyeTextureZoom` ayarları beklendiği gibi çalışıyor mu?
@@ -47,6 +50,8 @@ Bu çalışma ortamında doğrulanan değerler:
 ## 6) Sorun Giderme
 
 - Siyah ekran: `NetworkStreamUrl` yanlış veya kaynağa erişim yok olabilir.
+- Laptop IP değiştiyse URL’i güncelle (örnek: `rtsp://192.168.2.207:8554/quest3`).
+- Düşük çekim gücü gecikmeye sebep olur; mümkünse 5 GHz veya mobil hotspot ile kısa mesafe test et.
 - Java singleton/plugin kullanılacaksa:
   - singleton adı `QuestExternalTexture`
   - `configure_external_texture` / `set_stream_url` / `start_stream` metodlarının erişilebilir olduğunu doğrula.

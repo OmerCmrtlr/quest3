@@ -41,14 +41,51 @@ Not: Tablet cihazın yerel kamera erişimi bu akışta kullanılmaz.
 
 ## Hızlı Test
 
-1. `StereoViewScene` çalıştır.
-2. Inspector'dan `NetworkStreamUrl` değerini aynı Wi‑Fi ağındaki kaynak URL ile doldur.
-3. Görüntü geliyorsa 3D mesh akışı hazırdır.
-4. Gerekirse inspector’dan:
+1. Laptopta sender başlat:
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/stream/start_rtsp_sender.sh /dev/video0
+```
+
+2. `StereoViewScene` çalıştır.
+3. Varsayılan gömülü URL: `rtsp://192.168.2.207:8554/quest3`
+4. Görüntü geliyorsa 3D mesh akışı hazırdır.
+5. Gerekirse inspector’dan:
    - `EyeTextureShiftPixels`
    - `EyeTextureZoom`
    - `CenterOffsetPixels`
    ayarlarını yap.
+
+## Sender Kontrolü
+
+Durum:
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/stream/status_rtsp_sender.sh
+```
+
+Durdurma:
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/stream/stop_rtsp_sender.sh
+```
+
+FFmpeg kurulu değilse:
+
+```bash
+sudo apt update
+sudo apt install -y ffmpeg v4l-utils
+```
+
+## Ağ/Gecikme Notları
+
+- Bu test internet kotası tüketmez, trafik yerel ağdadır.
+- Wi‑Fi çekimi düşükse gecikme ve kare düşmesi normaldir.
+- 5 GHz, kısa mesafe ve düşük parazit ortamı tercih et.
+- Gerekirse mobil hotspot ile aynı LAN testine geçebilirsin.
 
 ## Not
 

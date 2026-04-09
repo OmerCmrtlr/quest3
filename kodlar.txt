@@ -5,8 +5,32 @@ Bu dosya yalnızca projede aktif kullanılan kodları içerir.
 - Kaynak: Aynı Wi‑Fi ağındaki laptop stream URL
 - Tablet yerel kamera: kullanılmaz
 - GStreamer/addon tabanı: projeden kaldırıldı
+- Laptop sender scriptleri: `tools/stream/start_rtsp_sender.sh`, `stop_rtsp_sender.sh`, `status_rtsp_sender.sh`
 - Render: 3D sahnede aynı noktada 2 `SubViewport` + 2 mesh
 - Default ekran: tek göz tam ekran (`UseLeftEyeForMainDisplay`)
+
+## Runtime Sender Komutları (Laptop)
+
+Başlat:
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/stream/start_rtsp_sender.sh /dev/video0
+```
+
+Durum:
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/stream/status_rtsp_sender.sh
+```
+
+Durdur:
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/stream/stop_rtsp_sender.sh
+```
 
 ---
 
@@ -76,7 +100,7 @@ size = Vector2(1, 1)
 script = ExtResource("1_stereo")
 StartOnReady = true
 AndroidCameraSingletonName = "QuestExternalTexture"
-NetworkStreamUrl = ""
+NetworkStreamUrl = "rtsp://192.168.2.207:8554/quest3"
 StreamWidth = 1280
 StreamHeight = 720
 AutoStartStream = true
