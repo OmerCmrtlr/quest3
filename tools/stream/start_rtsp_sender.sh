@@ -12,9 +12,10 @@ STREAM_PORT="${STREAM_PORT:-8554}"
 STREAM_PATH="${STREAM_PATH:-quest3}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
-FPS="${FPS:-30}"
+FPS="${FPS:-15}"
 MEDIAMTX_CONTAINER="${MEDIAMTX_CONTAINER:-quest3-mediamtx}"
 MEDIAMTX_IMAGE="${MEDIAMTX_IMAGE:-bluenviron/mediamtx:latest}"
+AUDIO_ENABLE="${AUDIO_ENABLE:-1}"
 
 if [[ -z "$CAMERA_DEVICE" ]] && command -v v4l2-ctl >/dev/null 2>&1; then
     CAMERA_DEVICE="$(v4l2-ctl --list-devices 2>/dev/null | awk '
@@ -84,8 +85,41 @@ if ! docker info >/dev/null 2>&1; then
     exit 1
 fi
 
-if ! docker ps --format '{{.Names}}' | grep -Fxq "$MEDIAMTX_CONTAINER"; then
-    if docker ps -a --format '{{.Names}}' | grep -Fxq "$MEDIAMTX_CONTAINER"; then
+container_exists=0
+container_running=0
+if docker ps -a --format '{{.Names}}' | grep -Fxq "$MEDIAMTX_CONTAINER"; then
+    container_exists=1
+fi
+if docker ps --format '{{.Names}}' | grep -Fxq "$MEDIAMTX_CONTAINER"; then
+    container_running=1
+fi
+
+needs_recreate=0
+if [[ "$container_exists" == "1" ]]; then
+    port_bindings="$(docker inspect -f '{{json .HostConfig.PortBindings}}' "$MEDIAMTX_CONTAINER" 2>/dev/null || true)"
+    if ! grep -q '"8554/tcp"' <<< "$port_bindings"; then
+        needs_recreate=1
+    fi
+    if ! grep -q '"8000/udp"' <<< "$port_bindings"; then
+        needs_recreate=1
+    fi
+    if ! grep -q '"8001/udp"' <<< "$port_bindings"; then
+        needs_recreate=1
+    fi
+    if ! grep -q '"8888/tcp"' <<< "$port_bindings"; then
+        needs_recreate=1
+    fi
+fi
+
+if [[ "$needs_recreate" == "1" ]]; then
+    echo "[sender] RTSP server container port eşleşmeleri güncelleniyor..."
+    docker rm -f "$MEDIAMTX_CONTAINER" >/dev/null 2>&1 || true
+    container_exists=0
+    container_running=0
+fi
+
+if [[ "$container_running" == "0" ]]; then
+    if [[ "$container_exists" == "1" ]]; then
         docker rm -f "$MEDIAMTX_CONTAINER" >/dev/null 2>&1 || true
     fi
 
@@ -93,7 +127,10 @@ if ! docker ps --format '{{.Names}}' | grep -Fxq "$MEDIAMTX_CONTAINER"; then
     if ! docker run -d \
         --name "$MEDIAMTX_CONTAINER" \
         --restart unless-stopped \
-        -p "${STREAM_PORT}:8554" \
+        -p "${STREAM_PORT}:8554/tcp" \
+        -p "8000:8000/udp" \
+        -p "8001:8001/udp" \
+        -p "8888:8888/tcp" \
         "$MEDIAMTX_IMAGE" >/dev/null; then
         echo "[sender] MediaMTX container başlatılamadı."
         exit 1
@@ -135,6 +172,17 @@ fi
 
 PUBLISH_URL="rtsp://127.0.0.1:${STREAM_PORT}/${STREAM_PATH}"
 CLIENT_URL="rtsp://${LOCAL_IP}:${STREAM_PORT}/${STREAM_PATH}"
+HLS_URL="http://${LOCAL_IP}:8888/${STREAM_PATH}/index.m3u8"
+
+if [[ "$AUDIO_ENABLE" == "1" ]]; then
+    AUDIO_INPUT_ARGS=(-f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100)
+    AUDIO_CODEC_ARGS=(-c:a aac -b:a 96k -ar 44100 -ac 2)
+    AUDIO_MAP_ARGS=(-map 0:v:0 -map 1:a:0)
+else
+    AUDIO_INPUT_ARGS=()
+    AUDIO_CODEC_ARGS=()
+    AUDIO_MAP_ARGS=(-map 0:v:0 -an)
+fi
 
 echo "[sender] Başlatılıyor..."
 echo "[sender] Kamera cihazı: $CAMERA_DEVICE"
@@ -145,8 +193,10 @@ nohup ffmpeg \
     -framerate "$FPS" \
     -video_size "${WIDTH}x${HEIGHT}" \
     -i "$CAMERA_DEVICE" \
-    -an \
+    "${AUDIO_INPUT_ARGS[@]}" \
+    "${AUDIO_MAP_ARGS[@]}" \
     "${ENCODER_ARGS[@]}" \
+    "${AUDIO_CODEC_ARGS[@]}" \
     -f rtsp \
     -rtsp_transport tcp \
     "$PUBLISH_URL" \
@@ -165,4 +215,5 @@ fi
 
 echo "[sender] Çalışıyor (PID=$PID)"
 echo "[sender] Stream URL: $CLIENT_URL"
+echo "[sender] HLS URL (yedek test): $HLS_URL"
 echo "[sender] Log: $LOG_FILE"
