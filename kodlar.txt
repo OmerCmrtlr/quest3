@@ -15,8 +15,11 @@ Başlat:
 
 ```bash
 cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
-./tools/stream/start_rtsp_sender.sh /dev/video0
+./tools/stream/start_rtsp_sender.sh
 ```
+
+Not: Otomatik kamera seçimi loopback olmayan ilk `/dev/video*` cihazı üzerinden yapılır.
+Gerekirse manuel cihaz: `./tools/stream/start_rtsp_sender.sh /dev/video1`
 
 Durum:
 

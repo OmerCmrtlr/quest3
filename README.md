@@ -31,8 +31,11 @@ Bu proje, **2D split/overlay kullanmadan** kamera görüntüsünü 3D uzayda mes
 
   ```bash
   cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
-  ./tools/stream/start_rtsp_sender.sh /dev/video0
+  ./tools/stream/start_rtsp_sender.sh
   ```
+
+  Not: Script otomatik olarak ilk uygun (loopback olmayan) kamera cihazını seçer.
+  Gerekirse manuel cihaz verebilirsin: `./tools/stream/start_rtsp_sender.sh /dev/video1`
 
 3. Ana sahneyi çalıştır: `res://scenes/StereoViewScene.tscn`
 4. Sahnede gömülü URL:
@@ -64,6 +67,17 @@ FFmpeg kurulu değilse:
 sudo apt update
 sudo apt install -y ffmpeg v4l-utils
 ```
+
+Docker kurulu/deaktifse:
+
+```bash
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+```
+
+> Son komuttan sonra oturumu kapatıp tekrar aç.
 
 ## Ağ Notu (Wi‑Fi / Hotspot)
 

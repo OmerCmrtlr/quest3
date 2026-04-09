@@ -45,8 +45,11 @@ Not: Tablet cihazın yerel kamera erişimi bu akışta kullanılmaz.
 
 ```bash
 cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
-./tools/stream/start_rtsp_sender.sh /dev/video0
+./tools/stream/start_rtsp_sender.sh
 ```
+
+Not: Script otomatik olarak loopback olmayan ilk kamera cihazını seçer.
+Manuel cihaz için: `./tools/stream/start_rtsp_sender.sh /dev/video1`
 
 2. `StereoViewScene` çalıştır.
 3. Varsayılan gömülü URL: `rtsp://192.168.2.207:8554/quest3`
@@ -79,6 +82,17 @@ FFmpeg kurulu değilse:
 sudo apt update
 sudo apt install -y ffmpeg v4l-utils
 ```
+
+Docker kurulu/deaktifse:
+
+```bash
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+```
+
+> `usermod` sonrası oturumu kapatıp tekrar aç.
 
 ## Ağ/Gecikme Notları
 
