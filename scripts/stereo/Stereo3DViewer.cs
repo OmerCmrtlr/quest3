@@ -7,6 +7,8 @@ public partial class Stereo3DViewer : Node3D
     [Export] public bool StartOnReady = true;
     [Export] public string AndroidCameraSingletonName = "QuestExternalTexture";
     [Export] public string NetworkStreamUrl = "";
+    [Export] public bool EnableRtspToHlsFallback = true;
+    [Export] public int HlsPort = 8888;
     [Export] public int StreamWidth = 1280;
     [Export] public int StreamHeight = 720;
     [Export] public bool AutoStartStream = true;
@@ -59,6 +61,8 @@ public partial class Stereo3DViewer : Node3D
     private bool _pluginConfigured;
     private float _reconnectTimer;
     private float _streamHealthTimer;
+    private string _activeStreamUrl = string.Empty;
+    private bool _hlsFallbackActivated;
     private Vector2I _lastViewportSize = Vector2I.Zero;
     private ulong _nextSourceWarnAtMs;
 
@@ -112,6 +116,8 @@ void fragment() {
 
         _sessionActive = true;
         _pluginConfigured = false;
+        _activeStreamUrl = (NetworkStreamUrl ?? string.Empty).Trim();
+        _hlsFallbackActivated = false;
         _streamHealthTimer = 0f;
         _sourceConnected = ConnectSourceTexture();
         if (!_sourceConnected)
@@ -125,6 +131,8 @@ void fragment() {
         _pluginConfigured = false;
         _reconnectTimer = 0f;
         _streamHealthTimer = 0f;
+        _activeStreamUrl = string.Empty;
+        _hlsFallbackActivated = false;
 
         StopPluginStream();
         _externalTexture = null;
@@ -400,14 +408,14 @@ void fragment() {
 
         _pluginConfigured = true;
 
-        if (!string.IsNullOrWhiteSpace(NetworkStreamUrl))
-            CallPluginBool("set_stream_url", NetworkStreamUrl);
+        if (!AutoStartStream && !string.IsNullOrWhiteSpace(GetEffectiveStreamUrl()))
+            CallPluginBool("set_stream_url", GetEffectiveStreamUrl());
 
         if (AutoStartStream)
             StartPluginStream();
 
         ApplySourceTexture(_externalTexture);
-        GD.Print($"[Stereo3D] External texture bridge hazır. texture_id={externalTextureId}, stream='{NetworkStreamUrl}'");
+        GD.Print($"[Stereo3D] External texture bridge hazır. texture_id={externalTextureId}, stream='{GetEffectiveStreamUrl()}'");
         return true;
     }
 
@@ -424,7 +432,10 @@ void fragment() {
 
         bool active = CallPluginBool("is_stream_active");
         if (!active)
+        {
+            TryActivateHlsFallback(TryGetPluginLastError());
             StartPluginStream();
+        }
     }
 
     private void StartPluginStream()
@@ -432,30 +443,81 @@ void fragment() {
         if (_androidPluginSingleton == null || !_pluginConfigured)
             return;
 
-        if (string.IsNullOrWhiteSpace(NetworkStreamUrl))
+        for (int attempt = 0; attempt < 2; attempt++)
         {
-            WarnSourceOnce("[Stereo3D] NetworkStreamUrl boş. Stream başlatılamıyor.");
-            return;
-        }
+            string streamUrl = GetEffectiveStreamUrl();
+            if (string.IsNullOrWhiteSpace(streamUrl))
+            {
+                WarnSourceOnce("[Stereo3D] NetworkStreamUrl boş. Stream başlatılamıyor.");
+                return;
+            }
 
-        bool urlOk = CallPluginBool("set_stream_url", NetworkStreamUrl);
-        if (!urlOk)
-        {
-            string pluginError = TryGetPluginLastError();
-            WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
-                ? "[Stereo3D] set_stream_url başarısız."
-                : $"[Stereo3D] set_stream_url hatası: {pluginError}");
-            return;
-        }
+            bool urlOk = CallPluginBool("set_stream_url", streamUrl);
+            if (!urlOk)
+            {
+                string pluginError = TryGetPluginLastError();
+                if (TryActivateHlsFallback(pluginError))
+                    continue;
 
-        bool startAccepted = CallPluginBool("start_stream");
-        if (!startAccepted)
-        {
-            string pluginError = TryGetPluginLastError();
-            WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
+                WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
+                    ? "[Stereo3D] set_stream_url başarısız."
+                    : $"[Stereo3D] set_stream_url hatası: {pluginError}");
+                return;
+            }
+
+            bool startAccepted = CallPluginBool("start_stream");
+            if (startAccepted)
+                return;
+
+            string startError = TryGetPluginLastError();
+            if (TryActivateHlsFallback(startError))
+                continue;
+
+            WarnSourceOnce(string.IsNullOrWhiteSpace(startError)
                 ? "[Stereo3D] start_stream başarısız."
-                : $"[Stereo3D] start_stream hatası: {pluginError}");
+                : $"[Stereo3D] start_stream hatası: {startError}");
+            return;
         }
+    }
+
+    private string GetEffectiveStreamUrl()
+    {
+        if (!string.IsNullOrWhiteSpace(_activeStreamUrl))
+            return _activeStreamUrl;
+
+        _activeStreamUrl = (NetworkStreamUrl ?? string.Empty).Trim();
+        return _activeStreamUrl;
+    }
+
+    private bool TryActivateHlsFallback(string reason)
+    {
+        if (!EnableRtspToHlsFallback || _hlsFallbackActivated)
+            return false;
+
+        string current = GetEffectiveStreamUrl();
+        if (string.IsNullOrWhiteSpace(current))
+            return false;
+
+        if (!Uri.TryCreate(current, UriKind.Absolute, out Uri uri))
+            return false;
+
+        if (!string.Equals(uri.Scheme, "rtsp", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        string host = uri.Host;
+        if (string.IsNullOrWhiteSpace(host))
+            return false;
+
+        string path = uri.AbsolutePath?.Trim('/') ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(path))
+            path = "quest3";
+
+        int hlsPort = HlsPort > 0 ? HlsPort : 8888;
+        _activeStreamUrl = $"http://{host}:{hlsPort}/{path}/index.m3u8";
+        _hlsFallbackActivated = true;
+
+        GD.Print($"[Stereo3D] RTSP başarısız, HLS fallback aktif: {_activeStreamUrl}. reason='{reason}'");
+        return true;
     }
 
     private void StopPluginStream()
