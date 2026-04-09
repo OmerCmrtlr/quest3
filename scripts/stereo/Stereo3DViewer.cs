@@ -6,6 +6,11 @@ public partial class Stereo3DViewer : Node3D
     [ExportGroup("Camera Source")]
     [Export] public bool StartOnReady = true;
     [Export] public string AndroidCameraSingletonName = "QuestExternalTexture";
+    [Export] public string NetworkStreamUrl = "";
+    [Export] public int StreamWidth = 1280;
+    [Export] public int StreamHeight = 720;
+    [Export] public bool AutoStartStream = true;
+    [Export(PropertyHint.Range, "0.2,5.0,0.1")] public float StreamHealthCheckIntervalSec = 1.0f;
 
     [ExportGroup("Stereo View")]
     [Export] public float EyeTextureShiftPixels = 1.5f;
@@ -46,10 +51,14 @@ public partial class Stereo3DViewer : Node3D
     private ShaderMaterial _rightSourceMaterial;
     private StandardMaterial3D _mainDisplayMaterial;
     private ImageTexture _blackFallbackTexture;
+    private ExternalTexture _externalTexture;
+    private GodotObject _androidPluginSingleton;
 
     private bool _sessionActive;
     private bool _sourceConnected;
+    private bool _pluginConfigured;
     private float _reconnectTimer;
+    private float _streamHealthTimer;
     private Vector2I _lastViewportSize = Vector2I.Zero;
     private ulong _nextSourceWarnAtMs;
 
@@ -88,7 +97,6 @@ void fragment() {
 
     public override void _Ready()
     {
-        RequestCameraPermissionIfNeeded();
         ResolveSceneNodes();
         EnsureMaterialsAndMeshes();
         SyncViewportAndGeometry(force: true);
@@ -103,6 +111,8 @@ void fragment() {
             return;
 
         _sessionActive = true;
+        _pluginConfigured = false;
+        _streamHealthTimer = 0f;
         _sourceConnected = ConnectSourceTexture();
         if (!_sourceConnected)
             ApplySourceTexture(null);
@@ -112,7 +122,13 @@ void fragment() {
     {
         _sessionActive = false;
         _sourceConnected = false;
+        _pluginConfigured = false;
         _reconnectTimer = 0f;
+        _streamHealthTimer = 0f;
+
+        StopPluginStream();
+        _externalTexture = null;
+        _androidPluginSingleton = null;
         ApplySourceTexture(null);
     }
 
@@ -126,7 +142,10 @@ void fragment() {
             return;
 
         if (_sourceConnected)
+        {
+            MonitorPluginStream((float)delta);
             return;
+        }
 
         _reconnectTimer += (float)delta;
         if (_reconnectTimer < SOURCE_RECONNECT_INTERVAL_SEC)
@@ -339,46 +358,197 @@ void fragment() {
 
     private bool ConnectSourceTexture()
     {
-        Texture2D pluginTexture = TryGetTextureFromAndroidSingleton();
-        if (pluginTexture != null)
+        if (OS.GetName() != "Android")
         {
-            ApplySourceTexture(pluginTexture);
-            GD.Print("[Stereo3D] Android singleton external texture kaynağı bağlandı.");
-            return true;
+            WarnSourceOnce("[Stereo3D] External texture bridge yalnızca Android build'de aktif olur.");
+            return false;
         }
 
-        WarnSourceOnce($"[Stereo3D] External texture singleton '{AndroidCameraSingletonName}' bulunamadı veya get_camera_texture() Texture2D döndürmedi.");
-        return false;
+        if (string.IsNullOrWhiteSpace(AndroidCameraSingletonName) || !Engine.HasSingleton(AndroidCameraSingletonName))
+        {
+            WarnSourceOnce($"[Stereo3D] Android singleton '{AndroidCameraSingletonName}' bulunamadı.");
+            return false;
+        }
+
+        _androidPluginSingleton = Engine.GetSingleton(AndroidCameraSingletonName);
+        if (_androidPluginSingleton == null)
+        {
+            WarnSourceOnce($"[Stereo3D] Singleton '{AndroidCameraSingletonName}' alınamadı.");
+            return false;
+        }
+
+        _externalTexture ??= new ExternalTexture();
+
+        ulong externalTextureId = _externalTexture.GetExternalTextureId();
+        if (externalTextureId == 0)
+        {
+            WarnSourceOnce("[Stereo3D] ExternalTexture ID alınamadı.");
+            return false;
+        }
+
+        int safeWidth = Mathf.Max(16, StreamWidth);
+        int safeHeight = Mathf.Max(16, StreamHeight);
+        bool configured = CallPluginBool("configure_external_texture", (long)externalTextureId, safeWidth, safeHeight);
+        if (!configured)
+        {
+            string pluginError = TryGetPluginLastError();
+            WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
+                ? "[Stereo3D] Plugin configure_external_texture başarısız oldu."
+                : $"[Stereo3D] Plugin configure_external_texture hatası: {pluginError}");
+            return false;
+        }
+
+        _pluginConfigured = true;
+
+        if (!string.IsNullOrWhiteSpace(NetworkStreamUrl))
+            CallPluginBool("set_stream_url", NetworkStreamUrl);
+
+        if (AutoStartStream)
+            StartPluginStream();
+
+        ApplySourceTexture(_externalTexture);
+        GD.Print($"[Stereo3D] External texture bridge hazır. texture_id={externalTextureId}, stream='{NetworkStreamUrl}'");
+        return true;
     }
 
-    private Texture2D TryGetTextureFromAndroidSingleton()
+    private void MonitorPluginStream(float delta)
     {
-        if (OS.GetName() != "Android")
-            return null;
+        if (!AutoStartStream || _androidPluginSingleton == null || !_pluginConfigured)
+            return;
 
-        if (string.IsNullOrWhiteSpace(AndroidCameraSingletonName))
-            return null;
+        _streamHealthTimer += delta;
+        if (_streamHealthTimer < Mathf.Max(0.2f, StreamHealthCheckIntervalSec))
+            return;
 
-        if (!Engine.HasSingleton(AndroidCameraSingletonName))
-            return null;
+        _streamHealthTimer = 0f;
+
+        bool active = CallPluginBool("is_stream_active");
+        if (!active)
+            StartPluginStream();
+    }
+
+    private void StartPluginStream()
+    {
+        if (_androidPluginSingleton == null || !_pluginConfigured)
+            return;
+
+        if (string.IsNullOrWhiteSpace(NetworkStreamUrl))
+        {
+            WarnSourceOnce("[Stereo3D] NetworkStreamUrl boş. Stream başlatılamıyor.");
+            return;
+        }
+
+        bool urlOk = CallPluginBool("set_stream_url", NetworkStreamUrl);
+        if (!urlOk)
+        {
+            string pluginError = TryGetPluginLastError();
+            WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
+                ? "[Stereo3D] set_stream_url başarısız."
+                : $"[Stereo3D] set_stream_url hatası: {pluginError}");
+            return;
+        }
+
+        bool startAccepted = CallPluginBool("start_stream");
+        if (!startAccepted)
+        {
+            string pluginError = TryGetPluginLastError();
+            WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
+                ? "[Stereo3D] start_stream başarısız."
+                : $"[Stereo3D] start_stream hatası: {pluginError}");
+        }
+    }
+
+    private void StopPluginStream()
+    {
+        if (_androidPluginSingleton == null)
+            return;
 
         try
         {
-            GodotObject singleton = Engine.GetSingleton(AndroidCameraSingletonName);
-            if (singleton == null || !singleton.HasMethod("get_camera_texture"))
-                return null;
-
-            Variant result = singleton.Call("get_camera_texture");
-            if (result.VariantType != Variant.Type.Object)
-                return null;
-
-            GodotObject obj = result.AsGodotObject();
-            return obj as Texture2D;
+            if (_androidPluginSingleton.HasMethod("stop_stream"))
+                _androidPluginSingleton.Call("stop_stream");
         }
         catch (Exception e)
         {
-            GD.PrintErr("[Stereo3D] Android singleton texture okuma hatası: " + e.Message);
-            return null;
+            GD.PrintErr("[Stereo3D] stop_stream çağrısı hatası: " + e.Message);
+        }
+    }
+
+    private bool CallPluginBool(string method)
+    {
+        if (_androidPluginSingleton == null || !_androidPluginSingleton.HasMethod(method))
+            return false;
+
+        try
+        {
+            Variant result = _androidPluginSingleton.Call(method);
+            return VariantToBool(result);
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"[Stereo3D] Plugin çağrı hatası ({method}): {e.Message}");
+            return false;
+        }
+    }
+
+    private bool CallPluginBool(string method, string arg0)
+    {
+        if (_androidPluginSingleton == null || !_androidPluginSingleton.HasMethod(method))
+            return false;
+
+        try
+        {
+            Variant result = _androidPluginSingleton.Call(method, arg0);
+            return VariantToBool(result);
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"[Stereo3D] Plugin çağrı hatası ({method}): {e.Message}");
+            return false;
+        }
+    }
+
+    private bool CallPluginBool(string method, long arg0, int arg1, int arg2)
+    {
+        if (_androidPluginSingleton == null || !_androidPluginSingleton.HasMethod(method))
+            return false;
+
+        try
+        {
+            Variant result = _androidPluginSingleton.Call(method, arg0, arg1, arg2);
+            return VariantToBool(result);
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"[Stereo3D] Plugin çağrı hatası ({method}): {e.Message}");
+            return false;
+        }
+    }
+
+    private static bool VariantToBool(Variant result)
+    {
+        return result.VariantType switch
+        {
+            Variant.Type.Bool => result.AsBool(),
+            Variant.Type.Int => result.AsInt64() != 0,
+            Variant.Type.Nil => true,
+            _ => true,
+        };
+    }
+
+    private string TryGetPluginLastError()
+    {
+        if (_androidPluginSingleton == null || !_androidPluginSingleton.HasMethod("get_last_error"))
+            return string.Empty;
+
+        try
+        {
+            Variant v = _androidPluginSingleton.Call("get_last_error");
+            return v.VariantType == Variant.Type.String ? v.AsString() : v.ToString();
+        }
+        catch
+        {
+            return string.Empty;
         }
     }
 
@@ -446,16 +616,4 @@ void fragment() {
         GD.PrintErr(message);
     }
 
-    private static void RequestCameraPermissionIfNeeded()
-    {
-        try
-        {
-            if (OS.GetName() == "Android")
-                OS.RequestPermission("android.permission.CAMERA");
-        }
-        catch
-        {
-            // Sessiz geç.
-        }
-    }
 }

@@ -1,8 +1,0 @@
-[gd_scene format=3]
-
-[ext_resource type="Script" path="res://scripts/external/CameraExternalTextureSender.cs" id="1_ext"]
-
-[node name="ExternalTextureScene" type="Node"]
-script = ExtResource("1_ext")
-AutoStart = true
-AndroidCameraSingletonName = "QuestExternalTexture"

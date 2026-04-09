@@ -1,16 +1,12 @@
-# Quest3 External Texture Only - Çalışan Kodlar (v1.0.0+)
+# Quest3 - Aktif Üretim Kodları (External Texture + Network + 3D Stereo)
 
-Bu doküman, projedeki güncel **strict external texture only** mimarisini ve çalışan çekirdek kodları tek dosyada toplar.
+Bu dosya yalnızca projede aktif kullanılan kodları içerir.
 
-## Uygulanan Kurallar
-
-- Fallback kaldırıldı (local camera yolu yok).
-- Kaynak yalnızca Android singleton:
-  - `QuestExternalTexture`
-  - `get_camera_texture()`
-  - `Texture2D`
-- Stereo üretim: iki `SubViewport`, aynı origin, shader ile UV shift.
-- Tablet/default görünüm: tek göz tam ekran (`UseLeftEyeForMainDisplay`).
+- Kaynak: Aynı Wi‑Fi ağındaki laptop stream URL
+- Tablet yerel kamera: kullanılmaz
+- GStreamer/addon tabanı: projeden kaldırıldı
+- Render: 3D sahnede aynı noktada 2 `SubViewport` + 2 mesh
+- Default ekran: tek göz tam ekran (`UseLeftEyeForMainDisplay`)
 
 ---
 
@@ -79,6 +75,12 @@ size = Vector2(1, 1)
 [node name="StereoViewScene" type="Node3D"]
 script = ExtResource("1_stereo")
 StartOnReady = true
+AndroidCameraSingletonName = "QuestExternalTexture"
+NetworkStreamUrl = ""
+StreamWidth = 1280
+StreamHeight = 720
+AutoStartStream = true
+StreamHealthCheckIntervalSec = 1.0
 OutputWidth = 0
 OutputHeight = 0
 MatchWindowSizeAtRuntime = true
@@ -125,19 +127,6 @@ position = Vector3(0, 0, -2)
 
 ---
 
-## FILE: scenes/ExternalTextureScene.tscn
-
-[gd_scene format=3]
-
-[ext_resource type="Script" path="res://scripts/external/CameraExternalTextureSender.cs" id="1_ext"]
-
-[node name="ExternalTextureScene" type="Node"]
-script = ExtResource("1_ext")
-AutoStart = true
-AndroidCameraSingletonName = "QuestExternalTexture"
-
----
-
 ## FILE: scripts/stereo/Stereo3DViewer.cs
 
 using Godot;
@@ -148,6 +137,11 @@ public partial class Stereo3DViewer : Node3D
     [ExportGroup("Camera Source")]
     [Export] public bool StartOnReady = true;
     [Export] public string AndroidCameraSingletonName = "QuestExternalTexture";
+    [Export] public string NetworkStreamUrl = "";
+    [Export] public int StreamWidth = 1280;
+    [Export] public int StreamHeight = 720;
+    [Export] public bool AutoStartStream = true;
+    [Export(PropertyHint.Range, "0.2,5.0,0.1")] public float StreamHealthCheckIntervalSec = 1.0f;
 
     [ExportGroup("Stereo View")]
     [Export] public float EyeTextureShiftPixels = 1.5f;
@@ -188,10 +182,14 @@ public partial class Stereo3DViewer : Node3D
     private ShaderMaterial _rightSourceMaterial;
     private StandardMaterial3D _mainDisplayMaterial;
     private ImageTexture _blackFallbackTexture;
+    private ExternalTexture _externalTexture;
+    private GodotObject _androidPluginSingleton;
 
     private bool _sessionActive;
     private bool _sourceConnected;
+    private bool _pluginConfigured;
     private float _reconnectTimer;
+    private float _streamHealthTimer;
     private Vector2I _lastViewportSize = Vector2I.Zero;
     private ulong _nextSourceWarnAtMs;
 
@@ -230,7 +228,6 @@ void fragment() {
 
     public override void _Ready()
     {
-        RequestCameraPermissionIfNeeded();
         ResolveSceneNodes();
         EnsureMaterialsAndMeshes();
         SyncViewportAndGeometry(force: true);
@@ -245,6 +242,8 @@ void fragment() {
             return;
 
         _sessionActive = true;
+        _pluginConfigured = false;
+        _streamHealthTimer = 0f;
         _sourceConnected = ConnectSourceTexture();
         if (!_sourceConnected)
             ApplySourceTexture(null);
@@ -254,7 +253,13 @@ void fragment() {
     {
         _sessionActive = false;
         _sourceConnected = false;
+        _pluginConfigured = false;
         _reconnectTimer = 0f;
+        _streamHealthTimer = 0f;
+
+        StopPluginStream();
+        _externalTexture = null;
+        _androidPluginSingleton = null;
         ApplySourceTexture(null);
     }
 
@@ -268,7 +273,10 @@ void fragment() {
             return;
 
         if (_sourceConnected)
+        {
+            MonitorPluginStream((float)delta);
             return;
+        }
 
         _reconnectTimer += (float)delta;
         if (_reconnectTimer < SOURCE_RECONNECT_INTERVAL_SEC)
@@ -281,15 +289,6 @@ void fragment() {
     public override void _ExitTree()
     {
         StopSession();
-    }
-
-    public void SetExternalTexture(Texture2D texture)
-    {
-        if (texture == null)
-            return;
-
-        _sourceConnected = true;
-        ApplySourceTexture(texture);
     }
 
     private void ResolveSceneNodes()
@@ -481,46 +480,197 @@ void fragment() {
 
     private bool ConnectSourceTexture()
     {
-        Texture2D pluginTexture = TryGetTextureFromAndroidSingleton();
-        if (pluginTexture != null)
+        if (OS.GetName() != "Android")
         {
-            ApplySourceTexture(pluginTexture);
-            GD.Print("[Stereo3D] Android singleton external texture kaynağı bağlandı.");
-            return true;
+            WarnSourceOnce("[Stereo3D] External texture bridge yalnızca Android build'de aktif olur.");
+            return false;
         }
 
-        WarnSourceOnce($"[Stereo3D] External texture singleton '{AndroidCameraSingletonName}' bulunamadı veya get_camera_texture() Texture2D döndürmedi.");
-        return false;
+        if (string.IsNullOrWhiteSpace(AndroidCameraSingletonName) || !Engine.HasSingleton(AndroidCameraSingletonName))
+        {
+            WarnSourceOnce($"[Stereo3D] Android singleton '{AndroidCameraSingletonName}' bulunamadı.");
+            return false;
+        }
+
+        _androidPluginSingleton = Engine.GetSingleton(AndroidCameraSingletonName);
+        if (_androidPluginSingleton == null)
+        {
+            WarnSourceOnce($"[Stereo3D] Singleton '{AndroidCameraSingletonName}' alınamadı.");
+            return false;
+        }
+
+        _externalTexture ??= new ExternalTexture();
+
+        ulong externalTextureId = _externalTexture.GetExternalTextureId();
+        if (externalTextureId == 0)
+        {
+            WarnSourceOnce("[Stereo3D] ExternalTexture ID alınamadı.");
+            return false;
+        }
+
+        int safeWidth = Mathf.Max(16, StreamWidth);
+        int safeHeight = Mathf.Max(16, StreamHeight);
+        bool configured = CallPluginBool("configure_external_texture", (long)externalTextureId, safeWidth, safeHeight);
+        if (!configured)
+        {
+            string pluginError = TryGetPluginLastError();
+            WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
+                ? "[Stereo3D] Plugin configure_external_texture başarısız oldu."
+                : $"[Stereo3D] Plugin configure_external_texture hatası: {pluginError}");
+            return false;
+        }
+
+        _pluginConfigured = true;
+
+        if (!string.IsNullOrWhiteSpace(NetworkStreamUrl))
+            CallPluginBool("set_stream_url", NetworkStreamUrl);
+
+        if (AutoStartStream)
+            StartPluginStream();
+
+        ApplySourceTexture(_externalTexture);
+        GD.Print($"[Stereo3D] External texture bridge hazır. texture_id={externalTextureId}, stream='{NetworkStreamUrl}'");
+        return true;
     }
 
-    private Texture2D TryGetTextureFromAndroidSingleton()
+    private void MonitorPluginStream(float delta)
     {
-        if (OS.GetName() != "Android")
-            return null;
+        if (!AutoStartStream || _androidPluginSingleton == null || !_pluginConfigured)
+            return;
 
-        if (string.IsNullOrWhiteSpace(AndroidCameraSingletonName))
-            return null;
+        _streamHealthTimer += delta;
+        if (_streamHealthTimer < Mathf.Max(0.2f, StreamHealthCheckIntervalSec))
+            return;
 
-        if (!Engine.HasSingleton(AndroidCameraSingletonName))
-            return null;
+        _streamHealthTimer = 0f;
+
+        bool active = CallPluginBool("is_stream_active");
+        if (!active)
+            StartPluginStream();
+    }
+
+    private void StartPluginStream()
+    {
+        if (_androidPluginSingleton == null || !_pluginConfigured)
+            return;
+
+        if (string.IsNullOrWhiteSpace(NetworkStreamUrl))
+        {
+            WarnSourceOnce("[Stereo3D] NetworkStreamUrl boş. Stream başlatılamıyor.");
+            return;
+        }
+
+        bool urlOk = CallPluginBool("set_stream_url", NetworkStreamUrl);
+        if (!urlOk)
+        {
+            string pluginError = TryGetPluginLastError();
+            WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
+                ? "[Stereo3D] set_stream_url başarısız."
+                : $"[Stereo3D] set_stream_url hatası: {pluginError}");
+            return;
+        }
+
+        bool startAccepted = CallPluginBool("start_stream");
+        if (!startAccepted)
+        {
+            string pluginError = TryGetPluginLastError();
+            WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
+                ? "[Stereo3D] start_stream başarısız."
+                : $"[Stereo3D] start_stream hatası: {pluginError}");
+        }
+    }
+
+    private void StopPluginStream()
+    {
+        if (_androidPluginSingleton == null)
+            return;
 
         try
         {
-            GodotObject singleton = Engine.GetSingleton(AndroidCameraSingletonName);
-            if (singleton == null || !singleton.HasMethod("get_camera_texture"))
-                return null;
-
-            Variant result = singleton.Call("get_camera_texture");
-            if (result.VariantType != Variant.Type.Object)
-                return null;
-
-            GodotObject obj = result.AsGodotObject();
-            return obj as Texture2D;
+            if (_androidPluginSingleton.HasMethod("stop_stream"))
+                _androidPluginSingleton.Call("stop_stream");
         }
         catch (Exception e)
         {
-            GD.PrintErr("[Stereo3D] Android singleton texture okuma hatası: " + e.Message);
-            return null;
+            GD.PrintErr("[Stereo3D] stop_stream çağrısı hatası: " + e.Message);
+        }
+    }
+
+    private bool CallPluginBool(string method)
+    {
+        if (_androidPluginSingleton == null || !_androidPluginSingleton.HasMethod(method))
+            return false;
+
+        try
+        {
+            Variant result = _androidPluginSingleton.Call(method);
+            return VariantToBool(result);
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"[Stereo3D] Plugin çağrı hatası ({method}): {e.Message}");
+            return false;
+        }
+    }
+
+    private bool CallPluginBool(string method, string arg0)
+    {
+        if (_androidPluginSingleton == null || !_androidPluginSingleton.HasMethod(method))
+            return false;
+
+        try
+        {
+            Variant result = _androidPluginSingleton.Call(method, arg0);
+            return VariantToBool(result);
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"[Stereo3D] Plugin çağrı hatası ({method}): {e.Message}");
+            return false;
+        }
+    }
+
+    private bool CallPluginBool(string method, long arg0, int arg1, int arg2)
+    {
+        if (_androidPluginSingleton == null || !_androidPluginSingleton.HasMethod(method))
+            return false;
+
+        try
+        {
+            Variant result = _androidPluginSingleton.Call(method, arg0, arg1, arg2);
+            return VariantToBool(result);
+        }
+        catch (Exception e)
+        {
+            GD.PrintErr($"[Stereo3D] Plugin çağrı hatası ({method}): {e.Message}");
+            return false;
+        }
+    }
+
+    private static bool VariantToBool(Variant result)
+    {
+        return result.VariantType switch
+        {
+            Variant.Type.Bool => result.AsBool(),
+            Variant.Type.Int => result.AsInt64() != 0,
+            Variant.Type.Nil => true,
+            _ => true,
+        };
+    }
+
+    private string TryGetPluginLastError()
+    {
+        if (_androidPluginSingleton == null || !_androidPluginSingleton.HasMethod("get_last_error"))
+            return string.Empty;
+
+        try
+        {
+            Variant v = _androidPluginSingleton.Call("get_last_error");
+            return v.VariantType == Variant.Type.String ? v.AsString() : v.ToString();
+        }
+        catch
+        {
+            return string.Empty;
         }
     }
 
@@ -587,154 +737,151 @@ void fragment() {
         _nextSourceWarnAtMs = now + SOURCE_WARN_THROTTLE_MS;
         GD.PrintErr(message);
     }
+}
 
-    private static void RequestCameraPermissionIfNeeded()
-    {
-        try
-        {
-            if (OS.GetName() == "Android")
-                OS.RequestPermission("android.permission.CAMERA");
+---
+
+## FILE: android/build/src/main/java/com/godot/game/GodotApp.java
+
+/**************************************************************************/
+/*  GodotApp.java                                                         */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+package com.godot.game;
+
+import org.godotengine.godot.Godot;
+import org.godotengine.godot.GodotActivity;
+import org.godotengine.godot.plugin.GodotPlugin;
+
+import android.os.Bundle;
+import android.util.Log;
+
+import androidx.activity.EdgeToEdge;
+import androidx.core.splashscreen.SplashScreen;
+
+import java.util.HashSet;
+import java.util.Set;
+
+public class GodotApp extends GodotActivity {
+    static {
+        if (BuildConfig.FLAVOR.equals("mono")) {
+            try {
+                Log.v("GODOT", "Loading System.Security.Cryptography.Native.Android library");
+                System.loadLibrary("System.Security.Cryptography.Native.Android");
+            } catch (UnsatisfiedLinkError e) {
+                Log.e("GODOT", "Unable to load System.Security.Cryptography.Native.Android library");
+            }
         }
-        catch
-        {
-            // Sessiz geç.
+    }
+
+    private final Runnable updateWindowAppearance = () -> {
+        Godot godot = getGodot();
+        if (godot != null) {
+            godot.enableImmersiveMode(godot.isInImmersiveMode(), true);
+            godot.enableEdgeToEdge(godot.isInEdgeToEdgeMode(), true);
+            godot.setSystemBarsAppearance();
+        }
+    };
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        SplashScreen.installSplashScreen(this);
+        EdgeToEdge.enable(this);
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public Set<GodotPlugin> getHostPlugins(Godot godot) {
+        Set<GodotPlugin> plugins = new HashSet<>(super.getHostPlugins(godot));
+        plugins.add(new QuestExternalTexture(godot));
+        return plugins;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateWindowAppearance.run();
+    }
+
+    @Override
+    public void onGodotMainLoopStarted() {
+        super.onGodotMainLoopStarted();
+        runOnUiThread(updateWindowAppearance);
+    }
+
+    @Override
+    public void onGodotForceQuit(Godot instance) {
+        if (!BuildConfig.FLAVOR.equals("instrumented")) {
+            super.onGodotForceQuit(instance);
         }
     }
 }
 
 ---
 
-## FILE: scripts/external/CameraExternalTextureSender.cs
+## FILE: android/build/src/main/java/com/godot/game/QuestExternalTexture.java
 
-using Godot;
-using System;
-
-public partial class CameraExternalTextureSender : Node
-{
-    [Export] public bool AutoStart = true;
-    [Export] public string AndroidCameraSingletonName = "QuestExternalTexture";
-
-    private Texture2D _currentTexture;
-    private bool _running;
-
-    public override void _Ready()
-    {
-        if (AutoStart)
-            StartCapture();
-    }
-
-    public void StartCapture()
-    {
-        if (_running)
-            return;
-
-        RequestCameraPermissionIfNeeded();
-
-        Texture2D pluginTexture = TryGetTextureFromAndroidSingleton();
-        if (pluginTexture != null)
-        {
-            _currentTexture = pluginTexture;
-            _running = true;
-            GD.Print("[ExtTexture] Android singleton external texture bağlı.");
-            return;
-        }
-
-        GD.PrintErr($"[ExtTexture] External texture singleton '{AndroidCameraSingletonName}' bulunamadı veya get_camera_texture() Texture2D döndürmedi.");
-    }
-
-    public void StopCapture()
-    {
-        if (!_running)
-            return;
-
-        _running = false;
-        _currentTexture = null;
-    }
-
-    public Texture2D GetExternalTexture()
-    {
-        return _currentTexture;
-    }
-
-    public bool IsRunning()
-    {
-        return _running;
-    }
-
-    public override void _ExitTree()
-    {
-        StopCapture();
-    }
-
-    private Texture2D TryGetTextureFromAndroidSingleton()
-    {
-        if (OS.GetName() != "Android")
-            return null;
-
-        if (string.IsNullOrWhiteSpace(AndroidCameraSingletonName))
-            return null;
-
-        if (!Engine.HasSingleton(AndroidCameraSingletonName))
-            return null;
-
-        try
-        {
-            GodotObject singleton = Engine.GetSingleton(AndroidCameraSingletonName);
-            if (singleton == null || !singleton.HasMethod("get_camera_texture"))
-                return null;
-
-            Variant result = singleton.Call("get_camera_texture");
-            if (result.VariantType != Variant.Type.Object)
-                return null;
-
-            GodotObject obj = result.AsGodotObject();
-            return obj as Texture2D;
-        }
-        catch (Exception e)
-        {
-            GD.PrintErr("[ExtTexture] Android singleton texture okuma hatası: " + e.Message);
-            return null;
-        }
-    }
-
-    private static void RequestCameraPermissionIfNeeded()
-    {
-        try
-        {
-            if (OS.GetName() == "Android")
-                OS.RequestPermission("android.permission.CAMERA");
-        }
-        catch
-        {
-            // Sessiz geç.
-        }
-    }
-}
-
----
-
-## FILE: reference_archives/quest-3-external-texture-architecture/QuestExternalTexture.java
-
-package com.bnfnc.quest3;
+package com.godot.game;
 
 import android.graphics.SurfaceTexture;
-import android.opengl.GLES11Ext;
-import android.opengl.GLES20;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.util.Log;
+import android.view.Surface;
 
 import org.godotengine.godot.Godot;
 import org.godotengine.godot.plugin.GodotPlugin;
+import org.godotengine.godot.plugin.UsedByGodot;
 
-/**
- * QuestExternalTexture – Godot Android Plugin (template)
- *
- * Engine.GetSingleton("QuestExternalTexture") üzerinden erişilir.
- * get_camera_texture() metodu Godot tarafına external texture temsilcisini döndürmelidir.
- */
+import java.io.IOException;
+
+import javax.microedition.khronos.opengles.GL10;
+
 public class QuestExternalTexture extends GodotPlugin {
 
-    private int _glTextureId = -1;
-    private long _godotTextureRid = 0;
-    private SurfaceTexture _surfaceTexture;
+    private static final String TAG = "QuestExternalTexture";
+
+    private final Object lock = new Object();
+
+    private SurfaceTexture surfaceTexture;
+    private Surface surface;
+    private MediaPlayer mediaPlayer;
+
+    private int externalTextureId = -1;
+    private int textureWidth = 1280;
+    private int textureHeight = 720;
+
+    private volatile boolean frameAvailable = false;
+    private volatile boolean streamActive = false;
+    private volatile boolean playerPrepared = false;
+    private volatile String lastError = "";
+    private volatile String streamUrl = "";
 
     public QuestExternalTexture(Godot godot) {
         super(godot);
@@ -745,34 +892,267 @@ public class QuestExternalTexture extends GodotPlugin {
         return "QuestExternalTexture";
     }
 
-    /**
-     * Godot C# tarafı: singleton.Call("get_camera_texture")
-     *
-     * Not: Burada döndürülen değerin Godot tarafında Texture2D olarak
-     * kullanılabilmesi için plugin tarafında doğru Godot texture köprüsü
-     * tamamlanmalıdır.
-     */
-    public long get_camera_texture() {
-        if (_glTextureId == -1) {
-            initExternalTexture();
+    @UsedByGodot
+    public boolean configure_external_texture(long textureId, int width, int height) {
+        int glTextureId = (int) textureId;
+        if (glTextureId <= 0) {
+            setLastError("Geçersiz external texture id: " + textureId);
+            return false;
         }
-        return _godotTextureRid;
+
+        synchronized (lock) {
+            releaseSurfaceLocked();
+
+            externalTextureId = glTextureId;
+            textureWidth = Math.max(16, width);
+            textureHeight = Math.max(16, height);
+
+            try {
+                surfaceTexture = new SurfaceTexture(externalTextureId);
+                surfaceTexture.setDefaultBufferSize(textureWidth, textureHeight);
+                surfaceTexture.setOnFrameAvailableListener(texture -> frameAvailable = true);
+                surface = new Surface(surfaceTexture);
+                frameAvailable = false;
+                streamActive = false;
+                playerPrepared = false;
+                clearLastError();
+                Log.i(TAG, "External texture configure edildi. id=" + externalTextureId + " size=" + textureWidth + "x" + textureHeight);
+                return true;
+            } catch (Throwable t) {
+                setLastError("SurfaceTexture oluşturma hatası: " + t.getMessage());
+                releaseSurfaceLocked();
+                return false;
+            }
+        }
     }
 
-    private void initExternalTexture() {
-        int[] ids = new int[1];
-        GLES20.glGenTextures(1, ids, 0);
-        _glTextureId = ids[0];
+    @UsedByGodot
+    public boolean set_stream_url(String url) {
+        if (url == null) {
+            setLastError("Stream URL null olamaz.");
+            return false;
+        }
 
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, _glTextureId);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        String trimmed = url.trim();
+        if (trimmed.isEmpty()) {
+            setLastError("Stream URL boş olamaz.");
+            return false;
+        }
 
-        _surfaceTexture = new SurfaceTexture(_glTextureId);
-        _surfaceTexture.setOnFrameAvailableListener(st -> st.updateTexImage());
+        synchronized (lock) {
+            streamUrl = trimmed;
+            clearLastError();
+        }
 
-        // TODO 1: SurfaceTexture'ı Quest kamera kaynağına bağla.
-        // TODO 2: Godot RenderingServer tarafında external texture kaydı oluştur.
-        // TODO 3: Oluşan RID/ID değerini _godotTextureRid alanına yaz.
+        return true;
+    }
+
+    @UsedByGodot
+    public boolean start_stream() {
+        synchronized (lock) {
+            if (surface == null) {
+                setLastError("Surface hazır değil. Önce configure_external_texture çağrılmalı.");
+                return false;
+            }
+            if (streamUrl == null || streamUrl.isEmpty()) {
+                setLastError("Stream URL ayarlanmamış.");
+                return false;
+            }
+        }
+
+        runOnUiThread(this::startStreamOnUiThread);
+        return true;
+    }
+
+    private void startStreamOnUiThread() {
+        synchronized (lock) {
+            try {
+                stopMediaPlayerLocked();
+
+                mediaPlayer = new MediaPlayer();
+                mediaPlayer.setLooping(true);
+                mediaPlayer.setVolume(0f, 0f);
+                mediaPlayer.setScreenOnWhilePlaying(false);
+                mediaPlayer.setSurface(surface);
+
+                mediaPlayer.setOnPreparedListener(mp -> {
+                    synchronized (lock) {
+                        playerPrepared = true;
+                        streamActive = true;
+                        clearLastError();
+                    }
+                    try {
+                        mp.start();
+                    } catch (IllegalStateException e) {
+                        setLastError("MediaPlayer start hatası: " + e.getMessage());
+                    }
+                });
+
+                mediaPlayer.setOnCompletionListener(mp -> {
+                    synchronized (lock) {
+                        streamActive = false;
+                        playerPrepared = false;
+                    }
+                });
+
+                mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                    synchronized (lock) {
+                        streamActive = false;
+                        playerPrepared = false;
+                        setLastError("MediaPlayer error what=" + what + " extra=" + extra);
+                    }
+                    return true;
+                });
+
+                mediaPlayer.setOnInfoListener((mp, what, extra) -> false);
+                mediaPlayer.setOnVideoSizeChangedListener((mp, w, h) -> {
+                    synchronized (lock) {
+                        textureWidth = Math.max(16, w);
+                        textureHeight = Math.max(16, h);
+                        if (surfaceTexture != null) {
+                            try {
+                                surfaceTexture.setDefaultBufferSize(textureWidth, textureHeight);
+                            } catch (Throwable ignored) {
+                            }
+                        }
+                    }
+                });
+
+                mediaPlayer.setDataSource(getContext(), Uri.parse(streamUrl));
+                mediaPlayer.prepareAsync();
+            } catch (IOException | IllegalArgumentException | IllegalStateException e) {
+                streamActive = false;
+                playerPrepared = false;
+                setLastError("Stream başlatma hatası: " + e.getMessage());
+                stopMediaPlayerLocked();
+            }
+        }
+    }
+
+    @UsedByGodot
+    public void stop_stream() {
+        runOnUiThread(this::stopStreamOnUiThread);
+    }
+
+    private void stopStreamOnUiThread() {
+        synchronized (lock) {
+            stopMediaPlayerLocked();
+            streamActive = false;
+            playerPrepared = false;
+            frameAvailable = false;
+        }
+    }
+
+    @UsedByGodot
+    public boolean is_stream_active() {
+        return streamActive;
+    }
+
+    @UsedByGodot
+    public String get_last_error() {
+        return lastError == null ? "" : lastError;
+    }
+
+    @Override
+    public void onGLDrawFrame(GL10 gl) {
+        SurfaceTexture st = surfaceTexture;
+        if (st == null || !frameAvailable) {
+            return;
+        }
+
+        try {
+            st.updateTexImage();
+            frameAvailable = false;
+        } catch (Throwable t) {
+            setLastError("updateTexImage hatası: " + t.getMessage());
+        }
+    }
+
+    @Override
+    public void onMainPause() {
+        super.onMainPause();
+        stop_stream();
+    }
+
+    @Override
+    public void onMainDestroy() {
+        super.onMainDestroy();
+        runOnUiThread(() -> {
+            synchronized (lock) {
+                stopMediaPlayerLocked();
+                releaseSurfaceLocked();
+                streamActive = false;
+                playerPrepared = false;
+                frameAvailable = false;
+            }
+        });
+    }
+
+    private void stopMediaPlayerLocked() {
+        if (mediaPlayer == null) {
+            return;
+        }
+
+        try {
+            mediaPlayer.setSurface(null);
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            if (playerPrepared || mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
+            }
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            mediaPlayer.reset();
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            mediaPlayer.release();
+        } catch (Throwable ignored) {
+        }
+
+        mediaPlayer = null;
+        playerPrepared = false;
+    }
+
+    private void releaseSurfaceLocked() {
+        if (surface != null) {
+            try {
+                surface.release();
+            } catch (Throwable ignored) {
+            }
+            surface = null;
+        }
+
+        if (surfaceTexture != null) {
+            try {
+                surfaceTexture.release();
+            } catch (Throwable ignored) {
+            }
+            surfaceTexture = null;
+        }
+    }
+
+    private void clearLastError() {
+        lastError = "";
+    }
+
+    private void setLastError(String message) {
+        lastError = message == null ? "" : message;
+        Log.e(TAG, lastError);
     }
 }
+
+---
+
+## FILE: export_presets.cfg (ilgili kısım)
+
+[preset.0.options]
+permissions/access_network_state=true
+permissions/access_wifi_state=true
+permissions/internet=true
+permissions/camera=false

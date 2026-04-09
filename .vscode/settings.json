@@ -13,5 +13,19 @@
   },
   "files.exclude": {
     "**/.godot/": true
-  }
+  },
+  "files.associations": {
+    "**/android/build/src/main/java/com/godot/game/GodotApp.java": "plaintext",
+    "**/android/build/src/main/java/com/godot/game/QuestExternalTexture.java": "plaintext"
+  },
+  "java.project.sourcePaths": [
+    "android/build/src/main/java"
+  ],
+  "java.project.outputPath": "android/.vscode-java-bin",
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.metadata/**",
+    "**/archetype-resources/**",
+    "**/META-INF/maven/**"
+  ]
 }

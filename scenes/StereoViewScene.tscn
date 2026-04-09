@@ -14,6 +14,12 @@ size = Vector2(1, 1)
 [node name="StereoViewScene" type="Node3D"]
 script = ExtResource("1_stereo")
 StartOnReady = true
+AndroidCameraSingletonName = "QuestExternalTexture"
+NetworkStreamUrl = ""
+StreamWidth = 1280
+StreamHeight = 720
+AutoStartStream = true
+StreamHealthCheckIntervalSec = 1.0
 OutputWidth = 0
 OutputHeight = 0
 MatchWindowSizeAtRuntime = true

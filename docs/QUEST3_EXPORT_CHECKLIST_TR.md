@@ -13,8 +13,8 @@ Bu çalışma ortamında doğrulanan değerler:
 ## 2) Project Settings
 
 - Main Scene -> `res://scenes/StereoViewScene.tscn`
-- Camera Feed -> Enable = ON
 - Stereo sahne 3D mesh + SubViewport yapısında çalışıyor olmalı
+- `NetworkStreamUrl` aynı Wi‑Fi ağındaki kaynak URL ile ayarlı olmalı
 
 ## 3) Export Preset (Android)
 
@@ -23,7 +23,9 @@ Bu çalışma ortamında doğrulanan değerler:
 - Export path doldur (`build/android/Quest3-tablet-debug.apk`)
 - `Gradle Build = ON` (C# `net8.0` projesinde template tarafı `net9.0` uyarısını pratikte aşmak için)
 - Permissions:
-  - CAMERA
+  - INTERNET
+  - ACCESS_NETWORK_STATE
+  - ACCESS_WIFI_STATE
 - XR/OpenXR ihtiyacına göre ilgili ayarları aç
 
 > Not: Export ekranında `net8.0 -> net9.0 template` uyarısı görürsen iki seçenek var:
@@ -44,8 +46,7 @@ Bu çalışma ortamında doğrulanan değerler:
 
 ## 6) Sorun Giderme
 
-- Siyah ekran: kamera izni reddedilmiş olabilir; Android ayarlarından izin ver.
-- Java singleton kullanılacaksa:
+- Siyah ekran: `NetworkStreamUrl` yanlış veya kaynağa erişim yok olabilir.
+- Java singleton/plugin kullanılacaksa:
   - singleton adı `QuestExternalTexture`
-  - metod adı `get_camera_texture()`
-  - `Texture2D` döndürdüğünü doğrula.
+  - `configure_external_texture` / `set_stream_url` / `start_stream` metodlarının erişilebilir olduğunu doğrula.

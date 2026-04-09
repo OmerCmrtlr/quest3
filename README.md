@@ -13,26 +13,23 @@ Bu proje, **2D split/overlay kullanmadan** kamera görüntüsünü 3D uzayda mes
   - Ana (default) ekranda tam ekran olarak tek göz çıktısı (`UseLeftEyeForMainDisplay`) gösterilir.
 
 - Ana script: `scripts/stereo/Stereo3DViewer.cs`
-  - Öncelik: Android singleton external texture (`QuestExternalTexture.get_camera_texture()`)
+  - Android singleton bridge: `QuestExternalTexture`
+  - Akış: `configure_external_texture(texture_id, w, h)` + `set_stream_url(url)` + `start_stream()`
   - Fallback: yok (external texture zorunlu)
   - Stereo UV shift/zoom ayarları shader ile uygulanır.
 
-- Yardımcı script: `scripts/external/CameraExternalTextureSender.cs`
-  - Artık SHM/UDP sender değildir.
-  - External texture singleton kaynağını test eden yardımcı node’dur.
-
 ## Bu Akışta Neler Yok?
 
-- UDP sender/receiver zorunluluğu yok.
-- GStreamer receiver zorunluluğu yok.
+- Ek media middleware yok; yalnız network external texture hattı var.
+- Tablet cihazın yerel kamera erişimi yok.
 - Ortada çizgi/debug yazısı gibi 2D overlay yok.
 
 ## Hızlı Başlangıç
 
 1. Projeyi Godot’ta aç.
-2. `Project Settings -> Camera Feed -> Enable = ON`
-3. Ana sahneyi çalıştır: `res://scenes/StereoViewScene.tscn`
-4. Android’de Java plugin kullanacaksan singleton adı `QuestExternalTexture` ile `get_camera_texture()` dönüşü `Texture2D` olacak şekilde bağla.
+2. Ana sahneyi çalıştır: `res://scenes/StereoViewScene.tscn`
+3. `StereoViewScene` içinde `NetworkStreamUrl` değerini **laptop kaynak URL’i** olacak şekilde aynı Wi‑Fi ağında ayarla (örn. RTSP/HTTP).
+4. Android plugin tarafında `QuestExternalTexture` singleton'ı aktif olmalı.
 
 ## Not
 

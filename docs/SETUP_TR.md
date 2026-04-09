@@ -1,6 +1,6 @@
 # Quest3 / Tablet - 3D External Texture Kurulum Rehberi
 
-Bu proje artık **UDP/GStreamer akışına bağlı değildir**. Amaç:
+Bu proje yalnızca **network external texture** akışını kullanır. Amaç:
 
 - 2D UI olmadan,
 - iki `SubViewport` ile stereo üretip,
@@ -11,8 +11,6 @@ Bu proje artık **UDP/GStreamer akışına bağlı değildir**. Amaç:
 
 - `scenes/StereoViewScene.tscn` -> ana 3D stereo sahne
 - `scripts/stereo/Stereo3DViewer.cs` -> external texture + stereo mesh kontrolü
-- `scenes/ExternalTextureScene.tscn` -> external texture kaynağı test sahnesi
-- `scripts/external/CameraExternalTextureSender.cs` -> external texture source provider
 
 ## Sahne Akışı
 
@@ -25,25 +23,28 @@ Bu proje artık **UDP/GStreamer akışına bağlı değildir**. Amaç:
 
 ## Godot Ayarları
 
-- `Project Settings -> Camera Feed -> Enable = ON`
 - Main Scene: `res://scenes/StereoViewScene.tscn`
 
 ## External Texture Kaynağı (Android)
 
-Bir Android singleton sağlanabiliyorsa script şu metodu arar:
+Java plugin singleton adı: `QuestExternalTexture`
 
-- Singleton adı: `QuestExternalTexture`
-- Metod: `get_camera_texture()`
-- Beklenen dönüş: `Texture2D`
+Godot C# tarafı plugin ile şu çağrıları yapar:
 
-Bu projede `EnableLocalCameraFallback=false` kullanıldığı için singleton yoksa görüntü siyah kalır.
-Bu nedenle Java tarafındaki `QuestExternalTexture` singleton implementasyonu zorunludur.
+- `configure_external_texture(texture_id, width, height)`
+- `set_stream_url(url)`
+- `start_stream()`
+
+Bu projede fallback yoktur; singleton veya stream yoksa görüntü siyah kalır.
+
+Not: Tablet cihazın yerel kamera erişimi bu akışta kullanılmaz.
 
 ## Hızlı Test
 
 1. `StereoViewScene` çalıştır.
-2. Görüntü geliyorsa 3D mesh akışı hazırdır.
-3. Gerekirse inspector’dan:
+2. Inspector'dan `NetworkStreamUrl` değerini aynı Wi‑Fi ağındaki kaynak URL ile doldur.
+3. Görüntü geliyorsa 3D mesh akışı hazırdır.
+4. Gerekirse inspector’dan:
    - `EyeTextureShiftPixels`
    - `EyeTextureZoom`
    - `CenterOffsetPixels`
@@ -51,4 +52,4 @@ Bu nedenle Java tarafındaki `QuestExternalTexture` singleton implementasyonu zo
 
 ## Not
 
-Eski `python/stereo_webcam_gst_sender.py` dosyası repoda kalsa da bu yeni akışta gerekli değildir.
+Bu proje yalnızca laptop kaynaklı aynı Wi‑Fi network stream + external texture + 3D mesh gösterim hattını içerir.
