@@ -1,25 +1,4424 @@
-# Quest3 - Aktif Üretim Kodları (External Texture + Network + 3D Stereo)
+# Quest3 Proje Mimarisi (Ağaç) + Kod Envanteri (.sh Hariç)
 
-Bu dosya yalnızca projede aktif kullanılan kodları içerir.
+Güncelleme tarihi: 9 Nisan 2026
 
-- Kaynak: Aynı Wi‑Fi ağındaki laptop stream URL
-- Tablet yerel kamera: kullanılmaz
-- GStreamer/addon tabanı: projeden kaldırıldı
-- Laptop sender scriptleri: `tools/stream/start_rtsp_sender.sh`, `stop_rtsp_sender.sh`, `status_rtsp_sender.sh`
-- Render: 3D sahnede aynı noktada 2 `SubViewport` + 2 mesh
-- Default ekran: tek göz tam ekran (`UseLeftEyeForMainDisplay`)
+Bu doküman, kullanıcı isteğine göre **başlatma/yardımcı shell scriptleri (`*.sh`) hariç** proje mimarisini ağaç şeklinde ve projedeki kod/metin kaynak dosyalarını içerir.
 
-## Runtime Sender Komutları (Laptop)
+---
 
-Başlat:
+## 1) Proje Mimarisi (Ağaç)
+
+```text
+quest-3/
+├── .editorconfig
+├── .gitattributes
+├── .gitignore
+├── .vscode/
+│   └── settings.json
+├── README.md
+├── docs/
+│   ├── QUEST3_EXPORT_CHECKLIST_TR.md
+│   └── SETUP_TR.md
+├── project.godot
+├── export_presets.cfg
+├── quest-3.sln
+├── Quest3.csproj
+├── icon.svg.import
+├── scenes/
+│   └── StereoViewScene.tscn
+├── scripts/
+│   └── stereo/
+│       ├── Stereo3DViewer.cs
+│       └── Stereo3DViewer.cs.uid
+└── android/
+    └── build/
+        ├── assetPackInstallTime/
+        │   └── build.gradle
+        ├── build.gradle
+        ├── config.gradle
+        ├── gradle.properties
+        ├── settings.gradle
+        ├── gradle/
+        │   └── wrapper/
+        │       └── gradle-wrapper.properties
+        ├── libs/
+        │   └── gdextensionlibs.json
+        ├── res/
+        │   ├── mipmap-anydpi-v26/
+        │   │   └── icon.xml
+        │   ├── values/
+        │   │   ├── godot_project_name_string.xml
+        │   │   └── themes.xml
+        │   └── values-*/
+        │       └── godot_project_name_string.xml
+        └── src/
+            ├── androidTestInstrumented/
+            │   └── java/com/godot/game/GodotAppTest.kt
+            ├── debug/
+            │   └── AndroidManifest.xml
+            ├── instrumented/
+            │   ├── AndroidManifest.xml
+            │   ├── assets/
+            │   │   ├── .godot/global_script_class_cache.cfg
+            │   │   ├── .godot/scene_groups_cache.cfg
+            │   │   ├── icon.svg.import
+            │   │   ├── main.gd
+            │   │   ├── main.gd.uid
+            │   │   ├── main.tscn
+            │   │   ├── project.godot
+            │   │   └── test/
+            │   │       ├── base_test.gd
+            │   │       ├── base_test.gd.uid
+            │   │       ├── file_access/file_access_tests.gd
+            │   │       ├── file_access/file_access_tests.gd.uid
+            │   │       ├── javaclasswrapper/java_class_wrapper_tests.gd
+            │   │       └── javaclasswrapper/java_class_wrapper_tests.gd.uid
+            │   ├── java/com/godot/game/test/
+            │   │   ├── GodotAppInstrumentedTestPlugin.kt
+            │   │   └── javaclasswrapper/
+            │   │       ├── TestClass.kt
+            │   │       ├── TestClass2.kt
+            │   │       └── TestClass3.kt
+            │   └── res/values/strings.xml
+            └── main/
+                ├── AndroidManifest.xml
+                ├── assets/
+                │   ├── .godot/global_script_class_cache.cfg
+                │   ├── .godot/mono/publish/arm64/Quest3.deps.json
+                │   ├── .godot/mono/publish/arm64/Quest3.runtimeconfig.json
+                │   ├── icon.svg.import
+                │   └── scripts/stereo/Stereo3DViewer.cs
+                └── java/com/godot/game/
+                    ├── GodotApp.java
+                    └── QuestExternalTexture.java
+```
+
+---
+
+## 2) Projedeki Kod Dosyaları (Tam Liste, `.sh` Hariç)
+
+1. `./android/build/assetPackInstallTime/build.gradle`
+2. `./android/build/build.gradle`
+3. `./android/build/config.gradle`
+4. `./android/build/gradle.properties`
+5. `./android/build/gradle/wrapper/gradle-wrapper.properties`
+6. `./android/build/libs/gdextensionlibs.json`
+7. `./android/build/res/mipmap-anydpi-v26/icon.xml`
+8. `./android/build/res/values-ar/godot_project_name_string.xml`
+9. `./android/build/res/values-bg/godot_project_name_string.xml`
+10. `./android/build/res/values-ca/godot_project_name_string.xml`
+11. `./android/build/res/values-cs/godot_project_name_string.xml`
+12. `./android/build/res/values-da/godot_project_name_string.xml`
+13. `./android/build/res/values-de/godot_project_name_string.xml`
+14. `./android/build/res/values-el/godot_project_name_string.xml`
+15. `./android/build/res/values-en/godot_project_name_string.xml`
+16. `./android/build/res/values-es/godot_project_name_string.xml`
+17. `./android/build/res/values-es-rES/godot_project_name_string.xml`
+18. `./android/build/res/values-fa/godot_project_name_string.xml`
+19. `./android/build/res/values-fi/godot_project_name_string.xml`
+20. `./android/build/res/values-fr/godot_project_name_string.xml`
+21. `./android/build/res/values/godot_project_name_string.xml`
+22. `./android/build/res/values-hi/godot_project_name_string.xml`
+23. `./android/build/res/values-hr/godot_project_name_string.xml`
+24. `./android/build/res/values-hu/godot_project_name_string.xml`
+25. `./android/build/res/values-in/godot_project_name_string.xml`
+26. `./android/build/res/values-it/godot_project_name_string.xml`
+27. `./android/build/res/values-iw/godot_project_name_string.xml`
+28. `./android/build/res/values-ja/godot_project_name_string.xml`
+29. `./android/build/res/values-ko/godot_project_name_string.xml`
+30. `./android/build/res/values-lt/godot_project_name_string.xml`
+31. `./android/build/res/values-lv/godot_project_name_string.xml`
+32. `./android/build/res/values-nb/godot_project_name_string.xml`
+33. `./android/build/res/values-nl/godot_project_name_string.xml`
+34. `./android/build/res/values-pl/godot_project_name_string.xml`
+35. `./android/build/res/values-pt/godot_project_name_string.xml`
+36. `./android/build/res/values-ro/godot_project_name_string.xml`
+37. `./android/build/res/values-ru/godot_project_name_string.xml`
+38. `./android/build/res/values-sk/godot_project_name_string.xml`
+39. `./android/build/res/values-sl/godot_project_name_string.xml`
+40. `./android/build/res/values-sr/godot_project_name_string.xml`
+41. `./android/build/res/values-sv/godot_project_name_string.xml`
+42. `./android/build/res/values/themes.xml`
+43. `./android/build/res/values-th/godot_project_name_string.xml`
+44. `./android/build/res/values-tl/godot_project_name_string.xml`
+45. `./android/build/res/values-tr/godot_project_name_string.xml`
+46. `./android/build/res/values-uk/godot_project_name_string.xml`
+47. `./android/build/res/values-vi/godot_project_name_string.xml`
+48. `./android/build/res/values-zh/godot_project_name_string.xml`
+49. `./android/build/res/values-zh-rHK/godot_project_name_string.xml`
+50. `./android/build/res/values-zh-rTW/godot_project_name_string.xml`
+51. `./android/build/settings.gradle`
+52. `./android/build/src/androidTestInstrumented/java/com/godot/game/GodotAppTest.kt`
+53. `./android/build/src/debug/AndroidManifest.xml`
+54. `./android/build/src/instrumented/AndroidManifest.xml`
+55. `./android/build/src/instrumented/assets/.godot/global_script_class_cache.cfg`
+56. `./android/build/src/instrumented/assets/.godot/scene_groups_cache.cfg`
+57. `./android/build/src/instrumented/assets/icon.svg.import`
+58. `./android/build/src/instrumented/assets/main.gd`
+59. `./android/build/src/instrumented/assets/main.gd.uid`
+60. `./android/build/src/instrumented/assets/main.tscn`
+61. `./android/build/src/instrumented/assets/project.godot`
+62. `./android/build/src/instrumented/assets/test/base_test.gd`
+63. `./android/build/src/instrumented/assets/test/base_test.gd.uid`
+64. `./android/build/src/instrumented/assets/test/file_access/file_access_tests.gd`
+65. `./android/build/src/instrumented/assets/test/file_access/file_access_tests.gd.uid`
+66. `./android/build/src/instrumented/assets/test/javaclasswrapper/java_class_wrapper_tests.gd`
+67. `./android/build/src/instrumented/assets/test/javaclasswrapper/java_class_wrapper_tests.gd.uid`
+68. `./android/build/src/instrumented/java/com/godot/game/test/GodotAppInstrumentedTestPlugin.kt`
+69. `./android/build/src/instrumented/java/com/godot/game/test/javaclasswrapper/TestClass2.kt`
+70. `./android/build/src/instrumented/java/com/godot/game/test/javaclasswrapper/TestClass3.kt`
+71. `./android/build/src/instrumented/java/com/godot/game/test/javaclasswrapper/TestClass.kt`
+72. `./android/build/src/instrumented/res/values/strings.xml`
+73. `./android/build/src/main/AndroidManifest.xml`
+74. `./android/build/src/main/assets/.godot/global_script_class_cache.cfg`
+75. `./android/build/src/main/assets/.godot/mono/publish/arm64/Quest3.deps.json`
+76. `./android/build/src/main/assets/.godot/mono/publish/arm64/Quest3.runtimeconfig.json`
+77. `./android/build/src/main/assets/icon.svg.import`
+78. `./android/build/src/main/assets/scripts/stereo/Stereo3DViewer.cs`
+79. `./android/build/src/main/java/com/godot/game/GodotApp.java`
+80. `./android/build/src/main/java/com/godot/game/QuestExternalTexture.java`
+81. `./docs/QUEST3_EXPORT_CHECKLIST_TR.md`
+82. `./docs/SETUP_TR.md`
+83. `./.editorconfig`
+84. `./export_presets.cfg`
+85. `./.gitattributes`
+86. `./.gitignore`
+87. `./icon.svg.import`
+88. `./kodlar.txt`
+89. `./project.godot`
+90. `./Quest3.csproj`
+91. `./quest-3.sln`
+92. `./README.md`
+93. `./scenes/StereoViewScene.tscn`
+94. `./scripts/stereo/Stereo3DViewer.cs`
+95. `./scripts/stereo/Stereo3DViewer.cs.uid`
+96. `./.vscode/settings.json`
+
+---
+
+## 3) Dışarıda Bırakılanlar
+
+- Tüm shell script dosyaları (`*.sh`) isteğe göre hariç bırakıldı.
+- Örnek: `start.sh`, `start_huawei.sh`, `stop.sh`, `connect_wifi_adb.sh`, `tools/stream/*.sh`, `tools/adb/*.sh`
+---
+
+## 4) Kodların Satır Satır Tam Dökümü
+
+> Not: Bu bölümde mevcut listedeki dosyaların içerikleri satır satır eklenmiştir.
+> Not: kodlar.txt bu döküme dahil edilmemiştir (self-reference / sonsuz büyüme engeli).
+
+### FILE: ./android/build/assetPackInstallTime/build.gradle
+
+```text
+plugins {
+    id 'com.android.asset-pack'
+}
+
+assetPack {
+    packName = "assetPackInstallTime" // Directory name for the asset pack
+    dynamicDelivery {
+        deliveryType = "install-time" // Delivery mode
+    }
+}
+
+```
+
+### FILE: ./android/build/build.gradle
+
+```text
+// Gradle build config for Godot Engine's Android port.
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+apply from: 'config.gradle'
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://plugins.gradle.org/m2/" }
+        maven { url "https://central.sonatype.com/repository/maven-snapshots/"}
+
+        // Godot user plugins custom maven repos
+        String[] mavenRepos = getGodotPluginsMavenRepos()
+        if (mavenRepos != null && mavenRepos.size() > 0) {
+            for (String repoUrl : mavenRepos) {
+                maven {
+                    url repoUrl
+                }
+            }
+        }
+    }
+}
+
+configurations {
+    // Initializes a placeholder for the devImplementation dependency configuration.
+    devImplementation {}
+    // Initializes a placeholder for the monoImplementation dependency configuration.
+    monoImplementation {}
+}
+
+dependencies {
+    // Android instrumented test dependencies
+    androidTestImplementation "androidx.test.ext:junit:$versions.junitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$versions.espressoCoreVersion"
+    androidTestImplementation "org.jetbrains.kotlin:kotlin-test:$versions.kotlinTestVersion"
+    androidTestImplementation "androidx.test:runner:$versions.testRunnerVersion"
+    androidTestUtil "androidx.test:orchestrator:$versions.testOrchestratorVersion"
+
+    implementation "androidx.fragment:fragment:$versions.fragmentVersion"
+    implementation "androidx.core:core-splashscreen:$versions.splashscreenVersion"
+
+    if (rootProject.findProject(":lib")) {
+        implementation project(":lib")
+    } else if (rootProject.findProject(":godot:lib")) {
+        implementation project(":godot:lib")
+    } else {
+        // Godot gradle build mode. In this scenario this project is the only one around and the Godot
+        // library is available through the pre-generated godot-lib.*.aar android archive files.
+        debugImplementation fileTree(dir: 'libs/debug', include: ['**/*.jar', '*.aar'])
+        devImplementation fileTree(dir: 'libs/dev', include: ['**/*.jar', '*.aar'])
+        releaseImplementation fileTree(dir: 'libs/release', include: ['**/*.jar', '*.aar'])
+    }
+
+    // Godot user plugins remote dependencies
+    String[] remoteDeps = getGodotPluginsRemoteBinaries()
+    if (remoteDeps != null && remoteDeps.size() > 0) {
+        for (String dep : remoteDeps) {
+            implementation dep
+        }
+    }
+
+    // Godot user plugins local dependencies
+    String[] pluginsBinaries = getGodotPluginsLocalBinaries()
+    if (pluginsBinaries != null && pluginsBinaries.size() > 0) {
+        implementation files(pluginsBinaries)
+    }
+
+    // Automatically pick up local dependencies in res://addons
+    String addonsDirectory = getAddonsDirectory()
+    if (addonsDirectory != null && !addonsDirectory.isBlank()) {
+        implementation fileTree(dir: "$addonsDirectory", include: ['*.jar', '*.aar'])
+    }
+
+    // .NET dependencies
+    String jar = '../../../../modules/mono/thirdparty/libSystem.Security.Cryptography.Native.Android.jar'
+    if (file(jar).exists()) {
+        monoImplementation files(jar)
+    }
+}
+
+android {
+    compileSdkVersion versions.compileSdk
+    buildToolsVersion versions.buildTools
+    ndkVersion versions.ndkVersion
+
+    compileOptions {
+        sourceCompatibility versions.javaVersion
+        targetCompatibility versions.javaVersion
+    }
+
+    kotlinOptions {
+        jvmTarget = versions.javaVersion
+    }
+
+    assetPacks = [":assetPackInstallTime"]
+
+    namespace = 'com.godot.game'
+
+    defaultConfig {
+        // The default ignore pattern for the 'assets' directory includes hidden files and directories which are used by Godot projects.
+        aaptOptions {
+            ignoreAssetsPattern "!.svn:!.git:!.gitignore:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~"
+        }
+
+        ndk {
+            debugSymbolLevel 'NONE'
+            String[] export_abi_list = getExportEnabledABIs()
+            abiFilters export_abi_list
+        }
+
+        // Feel free to modify the application id to your own.
+        applicationId getExportPackageName()
+        versionCode getExportVersionCode()
+        versionName getExportVersionName()
+        minSdkVersion getExportMinSdkVersion()
+        targetSdkVersion getExportTargetSdkVersion()
+
+        missingDimensionStrategy 'products', 'template'
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // The following argument makes the Android Test Orchestrator run its
+        // "pm clear" command after each test invocation. This command ensures
+        // that the app's state is completely cleared between tests.
+        testInstrumentationRunnerArguments clearPackageData: 'true'
+    }
+
+    testOptions {
+        execution 'ANDROIDX_TEST_ORCHESTRATOR'
+    }
+
+    lintOptions {
+        abortOnError false
+        disable 'MissingTranslation', 'UnusedResources'
+    }
+
+    ndkVersion versions.ndkVersion
+
+    packagingOptions {
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
+
+        // Debug symbols are kept for development within Android Studio.
+        if (shouldNotStrip()) {
+            jniLibs {
+                keepDebugSymbols += '**/*.so'
+            }
+        }
+
+        jniLibs {
+            // Setting this to true causes AGP to package compressed native libraries when building the app
+            // For more background, see:
+            // - https://developer.android.com/build/releases/past-releases/agp-3-6-0-release-notes#extractNativeLibs
+            // - https://stackoverflow.com/a/44704840
+            useLegacyPackaging shouldUseLegacyPackaging()
+        }
+
+        // Always select Godot's version of libc++_shared.so in case deps have their own
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+    }
+
+    signingConfigs {
+        debug {
+            if (hasCustomDebugKeystore()) {
+                storeFile new File(getDebugKeystoreFile())
+                storePassword getDebugKeystorePassword()
+                keyAlias getDebugKeyAlias()
+                keyPassword getDebugKeystorePassword()
+            }
+        }
+
+        release {
+            File keystoreFile = new File(getReleaseKeystoreFile())
+            if (keystoreFile.isFile()) {
+                storeFile keystoreFile
+                storePassword getReleaseKeystorePassword()
+                keyAlias getReleaseKeyAlias()
+                keyPassword getReleaseKeystorePassword()
+            }
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    buildTypes {
+
+        debug {
+            // Signing and zip-aligning are skipped for prebuilt builds, but
+            // performed for Godot gradle builds.
+            zipAlignEnabled shouldZipAlign()
+            if (shouldSign()) {
+                signingConfig signingConfigs.debug
+            } else {
+                signingConfig null
+            }
+        }
+
+        dev {
+            initWith debug
+            // Signing and zip-aligning are skipped for prebuilt builds, but
+            // performed for Godot gradle builds.
+            zipAlignEnabled shouldZipAlign()
+            if (shouldSign()) {
+                signingConfig signingConfigs.debug
+            } else {
+                signingConfig null
+            }
+        }
+
+        release {
+            // Signing and zip-aligning are skipped for prebuilt builds, but
+            // performed for Godot gradle builds.
+            zipAlignEnabled shouldZipAlign()
+            if (shouldSign()) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig null
+            }
+        }
+    }
+
+    flavorDimensions 'edition'
+
+    productFlavors {
+        // Product flavor for the standard (no .net support) builds.
+        standard {
+            getIsDefault().set(true)
+        }
+
+        // Product flavor for the Mono (.net) builds.
+        mono {}
+
+        // Product flavor used for running instrumented tests.
+        instrumented {
+            applicationIdSuffix ".instrumented"
+            versionNameSuffix "-instrumented"
+        }
+    }
+
+    sourceSets {
+        main.res.srcDirs += ['res']
+        debug.jniLibs.srcDirs = ['libs/debug', 'libs/debug/vulkan_validation_layers']
+        dev.jniLibs.srcDirs = ['libs/dev']
+        release.jniLibs.srcDirs = ['libs/release']
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            String filenameSuffix = variant.flavorName == "mono" ? variant.name : variant.buildType.name
+            output.outputFileName = "android_${filenameSuffix}.apk"
+        }
+    }
+}
+
+task copyAndRenameBinary(type: Copy) {
+    // The 'doNotTrackState' is added to disable gradle's up-to-date checks for output files
+    // and directories. Otherwise this check may cause permissions access failures on Windows
+    // machines.
+    doNotTrackState("No need for up-to-date checks for the copy-and-rename operation")
+
+    String exportPath = getExportPath()
+    String exportFilename = getExportFilename()
+    String exportEdition = getExportEdition()
+    String exportBuildType = getExportBuildType()
+    String exportBuildTypeCapitalized = exportBuildType.capitalize()
+    String exportFormat = getExportFormat()
+
+    boolean isAab = exportFormat == "aab"
+    boolean isMono = exportEdition == "mono"
+    String filenameSuffix = isAab ? "${exportEdition}-${exportBuildType}" : exportBuildType
+    if (isMono) {
+        filenameSuffix = isAab ? "${exportEdition}-${exportBuildType}" : "${exportEdition}${exportBuildTypeCapitalized}"
+    }
+
+    String sourceFilename = isAab ? "${project.name}-${filenameSuffix}.aab" : "android_${filenameSuffix}.apk"
+    String sourceFilepath = isAab ? "$buildDir/outputs/bundle/${exportEdition}${exportBuildTypeCapitalized}/$sourceFilename" : "$buildDir/outputs/apk/$exportEdition/$exportBuildType/$sourceFilename"
+
+    from sourceFilepath
+    into exportPath
+    rename sourceFilename, exportFilename
+}
+
+/**
+ * Used to validate the version of the Java SDK used for the Godot gradle builds.
+ */
+task validateJavaVersion {
+    if (!JavaVersion.current().isCompatibleWith(versions.javaVersion)) {
+        throw new GradleException("Invalid Java version ${JavaVersion.current()}. Version ${versions.javaVersion} is the minimum supported Java version for Godot gradle builds.")
+    }
+}
+
+/*
+ * Older versions of our vendor plugin include a loader that we no longer need.
+ * This code ensures those are removed.
+ */
+tasks.withType( com.android.build.gradle.internal.tasks.MergeNativeLibsTask) {
+    doFirst {
+        externalLibNativeLibs.each { jniDir ->
+            if (jniDir.getCanonicalPath().contains("godot-openxr-") || jniDir.getCanonicalPath().contains("godotopenxr")) {
+                // Delete the 'libopenxr_loader.so' files from the vendors plugin so we only use the version from the
+                // openxr loader dependency.
+                File armFile = new File(jniDir, "arm64-v8a/libopenxr_loader.so")
+                if (armFile.exists()) {
+                    armFile.delete()
+                }
+                File x86File = new File(jniDir, "x86_64/libopenxr_loader.so")
+                if (x86File.exists()) {
+                    x86File.delete()
+                }
+            }
+        }
+    }
+}
+
+/*
+When they're scheduled to run, the copy*AARToAppModule tasks generate dependencies for the 'app'
+module, so we're ensuring the ':app:preBuild' task is set to run after those tasks.
+ */
+if (rootProject.tasks.findByPath("copyDebugAARToAppModule") != null) {
+    preBuild.mustRunAfter(rootProject.tasks.named("copyDebugAARToAppModule"))
+}
+if (rootProject.tasks.findByPath("copyDevAARToAppModule") != null) {
+    preBuild.mustRunAfter(rootProject.tasks.named("copyDevAARToAppModule"))
+}
+if (rootProject.tasks.findByPath("copyReleaseAARToAppModule") != null) {
+    preBuild.mustRunAfter(rootProject.tasks.named("copyReleaseAARToAppModule"))
+}
+
+```
+
+### FILE: ./android/build/config.gradle
+
+```text
+ext.versions = [
+    androidGradlePlugin: '8.6.1',
+    compileSdk         : 35,
+    // Also update:
+    // - 'platform/android/export/export_plugin.cpp#DEFAULT_MIN_SDK_VERSION'
+    // - 'platform/android/detect.py#get_min_target_api()'
+    minSdk             : 24,
+    // Also update 'platform/android/export/export_plugin.cpp#DEFAULT_TARGET_SDK_VERSION'
+    targetSdk          : 35,
+    buildTools         : '35.0.1',
+    kotlinVersion      : '2.1.20',
+    fragmentVersion    : '1.8.6',
+    nexusPublishVersion: '1.3.0',
+    javaVersion        : JavaVersion.VERSION_17,
+    // Also update 'platform/android/detect.py#get_ndk_version()' when this is updated.
+    ndkVersion         : '28.1.13356709',
+    splashscreenVersion: '1.0.1',
+    // 'openxrLoaderVersion' should be set to XR_CURRENT_API_VERSION, see 'thirdparty/openxr'
+    openxrLoaderVersion: '1.1.53',
+    openxrVendorsVersion: '4.2.2-stable',
+    junitVersion       : '1.3.0',
+    espressoCoreVersion: '3.7.0',
+    kotlinTestVersion  : '1.3.11',
+    testRunnerVersion  : '1.7.0',
+    testOrchestratorVersion: '1.6.1',
+]
+
+ext.getExportPackageName = { ->
+    // Retrieve the app id from the project property set by the Godot build command.
+    String appId = project.hasProperty("export_package_name") ? project.property("export_package_name") : ""
+    // Check if the app id is valid, otherwise use the default.
+    if (appId == null || appId.isEmpty()) {
+        appId = "com.godot.game"
+    }
+    return appId
+}
+
+ext.getExportVersionCode = { ->
+    String versionCode = project.hasProperty("export_version_code") ? project.property("export_version_code") : ""
+    if (versionCode == null || versionCode.isEmpty()) {
+        versionCode = "1"
+    }
+    try {
+        return Integer.parseInt(versionCode)
+    } catch (NumberFormatException ignored) {
+        return 1
+    }
+}
+
+ext.getExportVersionName = { ->
+    String versionName = project.hasProperty("export_version_name") ? project.property("export_version_name") : ""
+    if (versionName == null || versionName.isEmpty()) {
+        versionName = "1.0"
+    }
+    return versionName
+}
+
+ext.getExportMinSdkVersion = { ->
+    String minSdkVersion = project.hasProperty("export_version_min_sdk") ? project.property("export_version_min_sdk") : ""
+    if (minSdkVersion == null || minSdkVersion.isEmpty()) {
+        minSdkVersion = "$versions.minSdk"
+    }
+    try {
+        return Integer.parseInt(minSdkVersion)
+    } catch (NumberFormatException ignored) {
+        return versions.minSdk
+    }
+}
+
+ext.getExportTargetSdkVersion = { ->
+    String targetSdkVersion = project.hasProperty("export_version_target_sdk") ? project.property("export_version_target_sdk") : ""
+    if (targetSdkVersion == null || targetSdkVersion.isEmpty()) {
+        targetSdkVersion = "$versions.targetSdk"
+    }
+    try {
+        return Integer.parseInt(targetSdkVersion)
+    } catch (NumberFormatException ignored) {
+        return versions.targetSdk
+    }
+}
+
+ext.getGodotLibraryVersionCode = { ->
+    String versionName = ""
+    int versionCode = 1
+    (versionName, versionCode) = getGodotLibraryVersion()
+    return versionCode
+}
+
+ext.getGodotLibraryVersionName = { ->
+    String versionName = ""
+    int versionCode = 1
+    (versionName, versionCode) = getGodotLibraryVersion()
+    return versionName
+}
+
+ext.generateGodotLibraryVersion = { List<String> requiredKeys ->
+    // Attempt to read the version from the `version.py` file.
+    String libraryVersionName = ""
+    int libraryVersionCode = 0
+
+    File versionFile = new File("../../../version.py")
+    if (versionFile.isFile()) {
+        def map = [:]
+
+        List<String> lines = versionFile.readLines()
+        for (String line in lines) {
+            String[] keyValue = line.split("=")
+            String key = keyValue[0].trim()
+            String value = keyValue[1].trim().replaceAll("\"", "")
+
+            if (requiredKeys.contains(key)) {
+                if (!value.isEmpty()) {
+                    map[key] = value
+                }
+                requiredKeys.remove(key)
+            }
+        }
+
+        if (requiredKeys.empty) {
+            libraryVersionName = map.values().join(".")
+            try {
+                if (map.containsKey("status")) {
+                    int statusCode = 0
+                    String statusValue = map["status"]
+                    if (statusValue == null) {
+                        statusCode = 0
+                    } else if (statusValue.startsWith("dev")) {
+                        statusCode = 1
+                    } else if (statusValue.startsWith("alpha")) {
+                        statusCode = 2
+                    } else if (statusValue.startsWith("beta")) {
+                        statusCode = 3
+                    } else if (statusValue.startsWith("rc")) {
+                        statusCode = 4
+                    } else if (statusValue.startsWith("stable")) {
+                        statusCode = 5
+                    } else {
+                        statusCode = 0
+                    }
+
+                    libraryVersionCode = statusCode
+                }
+
+                if (map.containsKey("patch")) {
+                    libraryVersionCode += Integer.parseInt(map["patch"]) * 10
+                }
+
+                if (map.containsKey("minor")) {
+                    libraryVersionCode += (Integer.parseInt(map["minor"]) * 1000)
+                }
+
+                if (map.containsKey("major")) {
+                    libraryVersionCode += (Integer.parseInt(map["major"]) * 100000)
+                }
+            } catch (NumberFormatException ignore) {
+                libraryVersionCode = 1
+            }
+        }
+    }
+
+    if (libraryVersionName.isEmpty()) {
+        // Fallback value in case we're unable to read the file.
+        libraryVersionName = "custom_build"
+    }
+
+    if (libraryVersionCode == 0) {
+        libraryVersionCode = 1
+    }
+
+    return [libraryVersionName, libraryVersionCode]
+}
+
+ext.getGodotLibraryVersion = { ->
+    List<String> requiredKeys = ["major", "minor", "patch", "status", "module_config"]
+    return generateGodotLibraryVersion(requiredKeys)
+}
+
+ext.getGodotPublishVersion = { ->
+    List<String> requiredKeys = ["major", "minor", "patch", "status"]
+    String versionName = ""
+    int versionCode = 1
+    (versionName, versionCode) = generateGodotLibraryVersion(requiredKeys)
+    if (!versionName.endsWith("stable")) {
+        versionName += "-SNAPSHOT"
+    }
+    return versionName
+}
+
+final String VALUE_SEPARATOR_REGEX = "\\|"
+
+// get the list of ABIs the project should be exported to
+ext.getExportEnabledABIs = { ->
+    String enabledABIs = project.hasProperty("export_enabled_abis") ? project.property("export_enabled_abis") : ""
+    if (enabledABIs == null || enabledABIs.isEmpty()) {
+        enabledABIs = "armeabi-v7a|arm64-v8a|x86|x86_64|"
+    }
+    Set<String> exportAbiFilter = []
+    for (String abi_name : enabledABIs.split(VALUE_SEPARATOR_REGEX)) {
+        if (!abi_name.trim().isEmpty()){
+            exportAbiFilter.add(abi_name)
+        }
+    }
+    return exportAbiFilter
+}
+
+ext.getExportPath = {
+    String exportPath = project.hasProperty("export_path") ? project.property("export_path") : ""
+    if (exportPath == null || exportPath.isEmpty()) {
+        exportPath = "."
+    }
+    return exportPath
+}
+
+ext.getExportFilename = {
+    String exportFilename = project.hasProperty("export_filename") ? project.property("export_filename") : ""
+    if (exportFilename == null || exportFilename.isEmpty()) {
+        exportFilename = "godot_android"
+    }
+    return exportFilename
+}
+
+ext.getExportEdition = {
+    String exportEdition = project.hasProperty("export_edition") ? project.property("export_edition") : ""
+    if (exportEdition == null || exportEdition.isEmpty()) {
+        exportEdition = "standard"
+    }
+    return exportEdition
+}
+
+ext.getExportBuildType = {
+    String exportBuildType = project.hasProperty("export_build_type") ? project.property("export_build_type") : ""
+    if (exportBuildType == null || exportBuildType.isEmpty()) {
+        exportBuildType = "debug"
+    }
+    return exportBuildType
+}
+
+ext.getExportFormat = {
+    String exportFormat = project.hasProperty("export_format") ? project.property("export_format") : ""
+    if (exportFormat == null || exportFormat.isEmpty()) {
+        exportFormat = "apk"
+    }
+    return exportFormat
+}
+
+/**
+ * Parse the project properties for the 'plugins_maven_repos' property and return the list
+ * of maven repos.
+ */
+ext.getGodotPluginsMavenRepos = { ->
+    Set<String> mavenRepos = []
+
+    // Retrieve the list of maven repos.
+    if (project.hasProperty("plugins_maven_repos")) {
+        String mavenReposProperty = project.property("plugins_maven_repos")
+        if (mavenReposProperty != null && !mavenReposProperty.trim().isEmpty()) {
+            for (String mavenRepoUrl : mavenReposProperty.split(VALUE_SEPARATOR_REGEX)) {
+                mavenRepos += mavenRepoUrl.trim()
+            }
+        }
+    }
+
+    return mavenRepos
+}
+
+/**
+ * Parse the project properties for the 'plugins_remote_binaries' property and return
+ * it for inclusion in the build dependencies.
+ */
+ext.getGodotPluginsRemoteBinaries = { ->
+    Set<String> remoteDeps = []
+
+    // Retrieve the list of remote plugins binaries.
+    if (project.hasProperty("plugins_remote_binaries")) {
+        String remoteDepsList = project.property("plugins_remote_binaries")
+        if (remoteDepsList != null && !remoteDepsList.trim().isEmpty()) {
+            for (String dep: remoteDepsList.split(VALUE_SEPARATOR_REGEX)) {
+                remoteDeps += dep.trim()
+            }
+        }
+    }
+    return remoteDeps
+}
+
+/**
+ * Parse the project properties for the 'plugins_local_binaries' property and return
+ * their binaries for inclusion in the build dependencies.
+ */
+ext.getGodotPluginsLocalBinaries = { ->
+    Set<String> binDeps = []
+
+    // Retrieve the list of local plugins binaries.
+    if (project.hasProperty("plugins_local_binaries")) {
+        String pluginsList = project.property("plugins_local_binaries")
+        if (pluginsList != null && !pluginsList.trim().isEmpty()) {
+            for (String plugin : pluginsList.split(VALUE_SEPARATOR_REGEX)) {
+                binDeps += plugin.trim()
+            }
+        }
+    }
+
+    return binDeps
+}
+
+ext.getDebugKeystoreFile = { ->
+    String keystoreFile = project.hasProperty("debug_keystore_file") ? project.property("debug_keystore_file") : ""
+    if (keystoreFile == null || keystoreFile.isEmpty()) {
+        keystoreFile = "."
+    }
+    return keystoreFile
+}
+
+ext.hasCustomDebugKeystore = { ->
+    File keystoreFile = new File(getDebugKeystoreFile())
+    return keystoreFile.isFile()
+}
+
+ext.getDebugKeystorePassword = { ->
+    String keystorePassword = project.hasProperty("debug_keystore_password") ? project.property("debug_keystore_password") : ""
+    if (keystorePassword == null || keystorePassword.isEmpty()) {
+        keystorePassword = "android"
+    }
+    return keystorePassword
+}
+
+ext.getDebugKeyAlias = { ->
+    String keyAlias = project.hasProperty("debug_keystore_alias") ? project.property("debug_keystore_alias") : ""
+    if (keyAlias == null || keyAlias.isEmpty()) {
+        keyAlias = "androiddebugkey"
+    }
+    return keyAlias
+}
+
+ext.getReleaseKeystoreFile = { ->
+    String keystoreFile = project.hasProperty("release_keystore_file") ? project.property("release_keystore_file") : ""
+    if (keystoreFile == null || keystoreFile.isEmpty()) {
+        keystoreFile = "."
+    }
+    return keystoreFile
+}
+
+ext.getReleaseKeystorePassword = { ->
+    String keystorePassword = project.hasProperty("release_keystore_password") ? project.property("release_keystore_password") : ""
+    return keystorePassword
+}
+
+ext.getReleaseKeyAlias = { ->
+    String keyAlias = project.hasProperty("release_keystore_alias") ? project.property("release_keystore_alias") : ""
+    return keyAlias
+}
+
+ext.isAndroidStudio = { ->
+    return project.hasProperty('android.injected.invoked.from.ide')
+}
+
+ext.shouldZipAlign = { ->
+    String zipAlignFlag = project.hasProperty("perform_zipalign") ? project.property("perform_zipalign") : ""
+    if (zipAlignFlag == null || zipAlignFlag.isEmpty()) {
+        if (isAndroidStudio()) {
+            zipAlignFlag = "true"
+        } else {
+            zipAlignFlag = "false"
+        }
+    }
+    return Boolean.parseBoolean(zipAlignFlag)
+}
+
+ext.shouldSign = { ->
+    String signFlag = project.hasProperty("perform_signing") ? project.property("perform_signing") : ""
+    if (signFlag == null || signFlag.isEmpty()) {
+        if (isAndroidStudio()) {
+            signFlag = "true"
+        } else {
+            signFlag = "false"
+        }
+    }
+    return Boolean.parseBoolean(signFlag)
+}
+
+ext.shouldNotStrip = { ->
+    return isAndroidStudio() || project.hasProperty("doNotStrip")
+}
+
+/**
+ * Whether to use the legacy convention of compressing all .so files in the APK.
+ *
+ * For more background, see:
+ * - https://developer.android.com/build/releases/past-releases/agp-3-6-0-release-notes#extractNativeLibs
+ * - https://stackoverflow.com/a/44704840
+ */
+ext.shouldUseLegacyPackaging = { ->
+    String legacyPackagingFlag = project.hasProperty("compress_native_libraries") ? project.property("compress_native_libraries") : ""
+    if (legacyPackagingFlag != null && !legacyPackagingFlag.isEmpty()) {
+        return Boolean.parseBoolean(legacyPackagingFlag)
+    }
+
+    if (getExportMinSdkVersion() <= 29) {
+        // Use legacy packaging for compatibility with device running api <= 29.
+        // See https://github.com/godotengine/godot/issues/108842 for reference.
+        return true
+    }
+
+    // Default behavior for minSdk > 29.
+    return false
+}
+
+ext.getAddonsDirectory = { ->
+    String addonsDirectory = project.hasProperty("addons_directory") ? project.property("addons_directory") : ""
+    return addonsDirectory
+}
+
+```
+
+### FILE: ./android/build/gradle.properties
+
+```text
+# Godot gradle build settings.
+# These properties apply when running a gradle build from the Godot editor.
+# NOTE: This should be kept in sync with 'godot/platform/android/java/gradle.properties' except
+# where otherwise specified.
+
+# For more details on how to configure your build environment visit
+# https://www.gradle.org/docs/current/userguide/build_environment.html
+
+android.enableJetifier=true
+android.useAndroidX=true
+
+# Specifies the JVM arguments used for the daemon process.
+# The setting is particularly useful for tweaking memory settings.
+org.gradle.jvmargs=-Xmx4536m
+
+# When configured, Gradle will run in incubating parallel mode.
+# This option should only be used with decoupled projects. More details, visit
+# https://www.gradle.org/docs/current/userguide/multi_project_builds.html#sec:decoupled_projects
+# org.gradle.parallel=true
+
+org.gradle.warning.mode=all
+
+# Enable resource optimizations for release build.
+# NOTE: This is turned off for template release build in order to support the build legacy process.
+android.enableResourceOptimizations=true
+
+# Fix gradle build errors when the build path contains non-ASCII characters
+android.overridePathCheck=true
+
+```
+
+### FILE: ./android/build/gradle/wrapper/gradle-wrapper.properties
+
+```text
+#Wed Jan 17 12:08:26 PST 2024
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.11.1-bin.zip
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+
+```
+
+### FILE: ./android/build/libs/gdextensionlibs.json
+
+```text
+[
+	"res://android/build/libs/debug/arm64-v8a/libmonosgen-2.0.so",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-hot_reload-static.a",
+	"res://android/build/libs/debug/arm64-v8a/libSystem.Globalization.Native.a",
+	"res://android/build/libs/debug/arm64-v8a/libSystem.Native.so",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-marshal-ilgen-stub-static.a",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-hot_reload.so",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-debugger.so",
+	"res://android/build/libs/debug/arm64-v8a/libSystem.Security.Cryptography.Native.Android.so",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-diagnostics_tracing-stub-static.a",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-diagnostics_tracing-static.a",
+	"res://android/build/libs/debug/arm64-v8a/libSystem.Globalization.Native.so",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-marshal-ilgen-static.a",
+	"res://android/build/libs/debug/arm64-v8a/libSystem.Security.Cryptography.Native.Android.dex",
+	"res://android/build/libs/debug/arm64-v8a/libmonosgen-2.0.a",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-debugger-stub-static.a",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-hot_reload-stub-static.a",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-marshal-ilgen.so",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-diagnostics_tracing.so",
+	"res://android/build/libs/debug/arm64-v8a/libSystem.Security.Cryptography.Native.Android.jar",
+	"res://android/build/libs/debug/arm64-v8a/libSystem.IO.Compression.Native.so",
+	"res://android/build/libs/debug/arm64-v8a/libmono-component-debugger-static.a",
+	"res://android/build/libs/debug/arm64-v8a/libSystem.Security.Cryptography.Native.Android.a",
+	"res://android/build/libs/debug/arm64-v8a/libSystem.IO.Compression.Native.a",
+	"res://android/build/libs/debug/arm64-v8a/libSystem.Native.a"
+]
+```
+
+### FILE: ./android/build/res/mipmap-anydpi-v26/icon.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@mipmap/icon_background"/>
+    <foreground android:drawable="@mipmap/icon_foreground"/>
+</adaptive-icon>
+```
+
+### FILE: ./android/build/res/values-ar/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-bg/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-ca/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-cs/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-da/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-de/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-el/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-en/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-es/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-es-rES/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-fa/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-fi/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-fr/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-hi/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-hr/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-hu/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-in/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-it/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-iw/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-ja/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-ko/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-lt/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-lv/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-nb/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-nl/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-pl/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-pt/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-ro/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-ru/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-sk/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-sl/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-sr/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-sv/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values/themes.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<!-- GodotAppMainTheme is auto-generated during export. Manual changes will be overwritten.
+		 To add custom attributes, use the "gradle_build/custom_theme_attributes" Android export option. -->
+	<style name="GodotAppMainTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+		<item name="android:windowSwipeToDismiss">false</item>
+		<item name="android:windowIsTranslucent">false</item>
+		<item name="android:windowBackground">#000000</item>
+	</style>
+
+	<!-- GodotAppSplashTheme is auto-generated during export. Manual changes will be overwritten.
+		 To add custom attributes, use the "gradle_build/custom_theme_attributes" Android export option. -->
+	<style name="GodotAppSplashTheme" parent="Theme.SplashScreen">
+		<item name="android:windowSplashScreenBackground">@mipmap/icon_background</item>
+		<item name="windowSplashScreenAnimatedIcon">@mipmap/icon_foreground</item>
+		<item name="postSplashScreenTheme">@style/GodotAppMainTheme</item>
+		<item name="android:windowIsTranslucent">false</item>
+	</style>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-th/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-tl/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-tr/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-uk/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-vi/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-zh/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-zh-rHK/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/res/values-zh-rTW/godot_project_name_string.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
+<resources>
+	<string name="godot_project_name_string">Quest3</string>
+</resources>
+
+```
+
+### FILE: ./android/build/settings.gradle
+
+```text
+// This is the root directory of the Godot Android gradle build.
+pluginManagement {
+    apply from: 'config.gradle'
+
+    plugins {
+        id 'com.android.application' version versions.androidGradlePlugin
+        id 'org.jetbrains.kotlin.android' version versions.kotlinVersion
+    }
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://plugins.gradle.org/m2/" }
+        maven { url "https://central.sonatype.com/repository/maven-snapshots/"}
+    }
+}
+
+include ':assetPackInstallTime'
+
+```
+
+### FILE: ./android/build/src/androidTestInstrumented/java/com/godot/game/GodotAppTest.kt
+
+```text
+/**************************************************************************/
+/*  GodotAppTest.kt                                                       */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+package com.godot.game
+
+import android.content.ComponentName
+import android.content.Intent
+import android.util.Log
+import androidx.test.core.app.ActivityScenario
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.godot.game.test.GodotAppInstrumentedTestPlugin
+import org.godotengine.godot.GodotActivity.Companion.EXTRA_COMMAND_LINE_PARAMS
+import org.godotengine.godot.plugin.GodotPluginRegistry
+import org.junit.Test
+import org.junit.runner.RunWith
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+/**
+ * This instrumented test will launch the `instrumented` version of GodotApp and run a set of tests against it.
+ */
+@RunWith(AndroidJUnit4::class)
+class GodotAppTest {
+
+	companion object {
+		private val TAG = GodotAppTest::class.java.simpleName
+
+		private const val GODOT_APP_LAUNCHER_CLASS_NAME = "com.godot.game.GodotAppLauncher"
+		private const val GODOT_APP_CLASS_NAME = "com.godot.game.GodotApp"
+
+		private val TEST_COMMAND_LINE_PARAMS = arrayOf("This is a test")
+	}
+
+	private fun getTestPlugin(): GodotAppInstrumentedTestPlugin? {
+		return GodotPluginRegistry.getPluginRegistry()
+			.getPlugin("GodotAppInstrumentedTestPlugin") as GodotAppInstrumentedTestPlugin?
+	}
+
+	/**
+	 * Runs the JavaClassWrapper tests via the GodotAppInstrumentedTestPlugin.
+	 */
+	@Test
+	fun runJavaClassWrapperTests() {
+		ActivityScenario.launch(GodotApp::class.java).use { scenario ->
+			scenario.onActivity { activity ->
+				val testPlugin = getTestPlugin()
+				assertNotNull(testPlugin)
+
+				Log.d(TAG, "Waiting for the Godot main loop to start...")
+				testPlugin.waitForGodotMainLoopStarted()
+
+				Log.d(TAG, "Running JavaClassWrapper tests...")
+				val result = testPlugin.runJavaClassWrapperTests()
+				assertNotNull(result)
+				result.exceptionOrNull()?.let { throw it }
+				assertTrue(result.isSuccess)
+				Log.d(TAG, "Passed ${result.getOrNull()} tests")
+			}
+		}
+	}
+
+	/**
+	 * Runs file access related tests.
+	 */
+	@Test
+	fun runFileAccessTests() {
+		ActivityScenario.launch(GodotApp::class.java).use { scenario ->
+			scenario.onActivity { activity ->
+				val testPlugin = getTestPlugin()
+				assertNotNull(testPlugin)
+
+				Log.d(TAG, "Waiting for the Godot main loop to start...")
+				testPlugin.waitForGodotMainLoopStarted()
+
+				Log.d(TAG, "Running FileAccess tests...")
+				val result = testPlugin.runFileAccessTests()
+				assertNotNull(result)
+				result.exceptionOrNull()?.let { throw it }
+				assertTrue(result.isSuccess)
+			}
+		}
+	}
+
+	/**
+	 * Test implicit launch of the Godot app, and validates this resolves to the `GodotAppLauncher` activity alias.
+	 */
+	@Test
+	fun testImplicitGodotAppLauncherLaunch() {
+		val implicitLaunchIntent = Intent().apply {
+			setPackage(BuildConfig.APPLICATION_ID)
+			action = Intent.ACTION_MAIN
+			addCategory(Intent.CATEGORY_LAUNCHER)
+			putExtra(EXTRA_COMMAND_LINE_PARAMS, TEST_COMMAND_LINE_PARAMS)
+		}
+		ActivityScenario.launch<GodotApp>(implicitLaunchIntent).use { scenario ->
+			scenario.onActivity { activity ->
+				assertEquals(activity.intent.component?.className, GODOT_APP_LAUNCHER_CLASS_NAME)
+
+				val commandLineParams = activity.intent.getStringArrayExtra(EXTRA_COMMAND_LINE_PARAMS)
+				assertNull(commandLineParams)
+			}
+		}
+	}
+
+	/**
+	 * Test explicit launch of the Godot app via its activity-alias launcher, and validates it resolves properly.
+	 */
+	@Test
+	fun testExplicitGodotAppLauncherLaunch() {
+		val explicitIntent = Intent().apply {
+			component = ComponentName(BuildConfig.APPLICATION_ID, GODOT_APP_LAUNCHER_CLASS_NAME)
+			putExtra(EXTRA_COMMAND_LINE_PARAMS, TEST_COMMAND_LINE_PARAMS)
+		}
+		ActivityScenario.launch<GodotApp>(explicitIntent).use { scenario ->
+			scenario.onActivity { activity ->
+				assertEquals(activity.intent.component?.className, GODOT_APP_LAUNCHER_CLASS_NAME)
+
+				val commandLineParams = activity.intent.getStringArrayExtra(EXTRA_COMMAND_LINE_PARAMS)
+				assertNull(commandLineParams)
+			}
+		}
+	}
+
+	/**
+	 * Test explicit launch of the `GodotApp` activity.
+	 */
+	@Test
+	fun testExplicitGodotAppLaunch() {
+		val explicitIntent = Intent().apply {
+			component = ComponentName(BuildConfig.APPLICATION_ID, GODOT_APP_CLASS_NAME)
+			putExtra(EXTRA_COMMAND_LINE_PARAMS, TEST_COMMAND_LINE_PARAMS)
+		}
+		ActivityScenario.launch<GodotApp>(explicitIntent).use { scenario ->
+			scenario.onActivity { activity ->
+				assertEquals(activity.intent.component?.className, GODOT_APP_CLASS_NAME)
+
+				val commandLineParams = activity.intent.getStringArrayExtra(EXTRA_COMMAND_LINE_PARAMS)
+				assertNotNull(commandLineParams)
+				assertTrue(commandLineParams.contentEquals(TEST_COMMAND_LINE_PARAMS))
+			}
+		}
+	}
+}
+
+```
+
+### FILE: ./android/build/src/debug/AndroidManifest.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <supports-screens 
+        tools:node="replace"
+        android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:xlargeScreens="true" />
+    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-feature tools:node="replace" android:name="android.hardware.vulkan.level" android:required="false" android:version="1" />
+    <uses-feature tools:node="replace" android:name="android.hardware.vulkan.version" android:required="true" android:version="0x400003" />
+    <application android:label="@string/godot_project_name_string"
+        android:allowBackup="false"
+        android:icon="@mipmap/icon"
+        android:isGame="true"
+        android:hasFragileUserData="false"
+        android:requestLegacyExternalStorage="false"
+        android:appCategory="game"
+        tools:replace="android:allowBackup,android:appCategory,android:isGame,android:hasFragileUserData,android:requestLegacyExternalStorage"
+        tools:ignore="GoogleAppIndexingWarning">
+
+        <meta-data tools:node="replace" android:name="org.godotengine.rendering.method" android:value="mobile" />
+        <meta-data tools:node="replace" android:name="org.godotengine.editor.version" android:value="4.6.stable.mono" />
+        <activity android:name=".GodotApp" tools:replace="android:screenOrientation,android:excludeFromRecents,android:resizeableActivity" tools:node="mergeOnlyAttributes" android:excludeFromRecents="false" android:screenOrientation="landscape" android:resizeableActivity="true">
+        </activity>
+        <activity-alias
+            tools:node="mergeOnlyAttributes"
+            android:name=".GodotAppLauncher"
+            android:targetActivity=".GodotApp"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.HOME" />
+            </intent-filter>
+        </activity-alias>
+    </application>
+</manifest>
+
+```
+
+### FILE: ./android/build/src/instrumented/AndroidManifest.xml
+
+```text
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <meta-data
+            android:name="org.godotengine.plugin.v2.GodotAppInstrumentedTestPlugin"
+            android:value="com.godot.game.test.GodotAppInstrumentedTestPlugin"/>
+    </application>
+
+</manifest>
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/.godot/global_script_class_cache.cfg
+
+```text
+list=[{
+"base": &"RefCounted",
+"class": &"BaseTest",
+"icon": "",
+"is_abstract": true,
+"is_tool": false,
+"language": &"GDScript",
+"path": "res://test/base_test.gd"
+}, {
+"base": &"BaseTest",
+"class": &"FileAccessTests",
+"icon": "",
+"is_abstract": false,
+"is_tool": false,
+"language": &"GDScript",
+"path": "res://test/file_access/file_access_tests.gd"
+}, {
+"base": &"BaseTest",
+"class": &"JavaClassWrapperTests",
+"icon": "",
+"is_abstract": false,
+"is_tool": false,
+"language": &"GDScript",
+"path": "res://test/javaclasswrapper/java_class_wrapper_tests.gd"
+}]
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/.godot/scene_groups_cache.cfg
+
+```text
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/icon.svg.import
+
+```text
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://srnrli5m8won"
+path="res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex"
+metadata={
+"vram_texture": false
+}
+
+[deps]
+
+source_file="res://icon.svg"
+dest_files=["res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/uastc_level=0
+compress/rdo_quality_loss=0.0
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=false
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/channel_remap/red=0
+process/channel_remap/green=1
+process/channel_remap/blue=2
+process/channel_remap/alpha=3
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1
+svg/scale=1.0
+editor/scale_with_editor_scale=false
+editor/convert_colors_with_editor_theme=false
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/main.gd
+
+```text
+extends Node2D
+
+var _plugin_name = "GodotAppInstrumentedTestPlugin"
+var _android_plugin
+
+func _ready():
+	if Engine.has_singleton(_plugin_name):
+		_android_plugin = Engine.get_singleton(_plugin_name)
+		_android_plugin.connect("launch_tests", _launch_tests)
+	else:
+		printerr("Couldn't find plugin " + _plugin_name)
+		get_tree().quit()
+
+func _launch_tests(test_label: String) -> void:
+	var test_instance: BaseTest = null
+	match test_label:
+		"javaclasswrapper_tests":
+			test_instance = JavaClassWrapperTests.new()
+		"file_access_tests":
+			test_instance = FileAccessTests.new()
+
+	if test_instance:
+		test_instance.__reset_tests()
+		test_instance.run_tests()
+		var incomplete_tests = test_instance._test_started - test_instance._test_completed
+		_android_plugin.onTestsCompleted(test_label, test_instance._test_completed, test_instance._test_assert_failures + incomplete_tests)
+	else:
+		_android_plugin.onTestsFailed(test_label, "Unable to launch tests")
+
+
+func _on_plugin_toast_button_pressed() -> void:
+	if _android_plugin:
+		_android_plugin.helloWorld()
+
+func _on_vibration_button_pressed() -> void:
+	var android_runtime = Engine.get_singleton("AndroidRuntime")
+	if android_runtime:
+		print("Checking if the device supports vibration")
+		var vibrator_service = android_runtime.getApplicationContext().getSystemService("vibrator")
+		if vibrator_service:
+			if vibrator_service.hasVibrator():
+				print("Vibration is supported on device! Vibrating now...")
+				var VibrationEffect = JavaClassWrapper.wrap("android.os.VibrationEffect")
+				var effect = VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
+				vibrator_service.vibrate(effect)
+			else:
+				printerr("Vibration is not supported on device")
+		else:
+			printerr("Unable to retrieve the vibrator service")
+	else:
+		printerr("Couldn't find AndroidRuntime singleton")
+
+func _on_gd_script_toast_button_pressed() -> void:
+	var android_runtime = Engine.get_singleton("AndroidRuntime")
+	if android_runtime:
+		var activity = android_runtime.getActivity()
+
+		var toastCallable = func ():
+			var ToastClass = JavaClassWrapper.wrap("android.widget.Toast")
+			ToastClass.makeText(activity, "Toast from GDScript", ToastClass.LENGTH_LONG).show()
+
+		activity.runOnUiThread(android_runtime.createRunnableFromGodotCallable(toastCallable))
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/main.gd.uid
+
+```text
+uid://bv6y7in6otgcm
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/main.tscn
+
+```text
+[gd_scene load_steps=2 format=3 uid="uid://cg3hylang5fxn"]
+
+[ext_resource type="Script" uid="uid://bv6y7in6otgcm" path="res://main.gd" id="1_j0gfq"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_j0gfq")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+offset_left = 68.0
+offset_top = 102.0
+offset_right = 506.0
+offset_bottom = 408.0
+theme_override_constants/separation = 25
+
+[node name="PluginToastButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "Plugin Toast
+"
+
+[node name="VibrationButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "Vibration"
+
+[node name="GDScriptToastButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "GDScript Toast
+"
+
+[connection signal="pressed" from="VBoxContainer/PluginToastButton" to="." method="_on_plugin_toast_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/VibrationButton" to="." method="_on_vibration_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/GDScriptToastButton" to="." method="_on_gd_script_toast_button_pressed"]
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/project.godot
+
+```text
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Godot App Instrumentation Tests"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.5", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[debug]
+
+settings/stdout/verbose_stdout=true
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/test/base_test.gd
+
+```text
+@abstract class_name BaseTest
+
+var _test_started := 0
+var _test_completed := 0
+var _test_assert_passes := 0
+var _test_assert_failures := 0
+
+@abstract func run_tests()
+
+func __exec_test(test_func: Callable):
+	_test_started += 1
+	test_func.call()
+	_test_completed += 1
+
+func __reset_tests():
+	_test_started = 0
+	_test_completed = 0
+	_test_assert_passes = 0
+	_test_assert_failures = 0
+
+func __get_stack_frame():
+	for s in get_stack():
+		if not s.function.begins_with('__') and s.function != "assert_equal":
+			return s
+	return null
+
+func __assert_pass():
+	_test_assert_passes += 1
+	pass
+
+func __assert_fail():
+	_test_assert_failures += 1
+	var s = __get_stack_frame()
+	if s != null:
+		print_rich ("[color=red] == FAILURE: In function %s() from '%s' on line %s[/color]" % [s.function, s.source, s.line])
+	else:
+		print_rich ("[color=red] == FAILURE (run with --debug to get more information!) ==[/color]")
+
+func assert_equal(actual, expected):
+	if actual == expected:
+		__assert_pass()
+	else:
+		__assert_fail()
+		print ("    |-> Expected '%s' but got '%s'" % [expected, actual])
+
+func assert_true(value):
+	if value:
+		__assert_pass()
+	else:
+		__assert_fail()
+		print ("    |-> Expected '%s' to be truthy" % value)
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/test/base_test.gd.uid
+
+```text
+uid://mofa8j0d801f
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/test/file_access/file_access_tests.gd
+
+```text
+class_name FileAccessTests
+extends BaseTest
+
+const FILE_CONTENT = "This is a test for reading / writing to the "
+
+func run_tests():
+	print("FileAccess tests starting...")
+	__exec_test(test_obb_dir_access)
+	__exec_test(test_internal_app_dir_access)
+	__exec_test(test_internal_cache_dir_access)
+	__exec_test(test_external_app_dir_access)
+	__exec_test(test_downloads_dir_access)
+	__exec_test(test_documents_dir_access)
+
+func _test_dir_access(dir_path: String, data_file_content: String) -> void:
+	print("Testing access to " + dir_path)
+	var data_file_path = dir_path.path_join("data.dat")
+
+	var data_file = FileAccess.open(data_file_path, FileAccess.WRITE)
+	assert_true(data_file != null)
+	assert_true(data_file.store_string(data_file_content))
+	data_file.close()
+
+	data_file = FileAccess.open(data_file_path, FileAccess.READ)
+	assert_true(data_file != null)
+	var file_content = data_file.get_as_text()
+	assert_equal(file_content, data_file_content)
+	data_file.close()
+
+	var deletion_result = DirAccess.remove_absolute(data_file_path)
+	assert_equal(deletion_result, OK)
+
+func test_obb_dir_access() -> void:
+	var android_runtime = Engine.get_singleton("AndroidRuntime")
+	assert_true(android_runtime != null)
+
+	var app_context = android_runtime.getApplicationContext()
+	var obb_dir: String = app_context.getObbDir().getCanonicalPath()
+	_test_dir_access(obb_dir, FILE_CONTENT + "obb dir.")
+
+func test_internal_app_dir_access() -> void:
+	var android_runtime = Engine.get_singleton("AndroidRuntime")
+	assert_true(android_runtime != null)
+
+	var app_context = android_runtime.getApplicationContext()
+	var internal_app_dir: String = app_context.getFilesDir().getCanonicalPath()
+	_test_dir_access(internal_app_dir, FILE_CONTENT + "internal app dir.")
+
+func test_internal_cache_dir_access() -> void:
+	var android_runtime = Engine.get_singleton("AndroidRuntime")
+	assert_true(android_runtime != null)
+
+	var app_context = android_runtime.getApplicationContext()
+	var internal_cache_dir: String = app_context.getCacheDir().getCanonicalPath()
+	_test_dir_access(internal_cache_dir, FILE_CONTENT + "internal cache dir.")
+
+func test_external_app_dir_access() -> void:
+	var android_runtime = Engine.get_singleton("AndroidRuntime")
+	assert_true(android_runtime != null)
+
+	var app_context = android_runtime.getApplicationContext()
+	var external_app_dir: String = app_context.getExternalFilesDir("").getCanonicalPath()
+	_test_dir_access(external_app_dir, FILE_CONTENT + "external app dir.")
+
+func test_downloads_dir_access() -> void:
+	var EnvironmentClass = JavaClassWrapper.wrap("android.os.Environment")
+	var downloads_dir = EnvironmentClass.getExternalStoragePublicDirectory(EnvironmentClass.DIRECTORY_DOWNLOADS).getCanonicalPath()
+	_test_dir_access(downloads_dir, FILE_CONTENT + "downloads dir.")
+
+func test_documents_dir_access() -> void:
+	var EnvironmentClass = JavaClassWrapper.wrap("android.os.Environment")
+	var documents_dir = EnvironmentClass.getExternalStoragePublicDirectory(EnvironmentClass.DIRECTORY_DOCUMENTS).getCanonicalPath()
+	_test_dir_access(documents_dir, FILE_CONTENT + "documents dir.")
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/test/file_access/file_access_tests.gd.uid
+
+```text
+uid://b1o8wj1s4vghn
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/test/javaclasswrapper/java_class_wrapper_tests.gd
+
+```text
+class_name JavaClassWrapperTests
+extends BaseTest
+
+func run_tests():
+	print("JavaClassWrapper tests starting..")
+
+	__exec_test(test_exceptions)
+
+	__exec_test(test_multiple_signatures)
+	__exec_test(test_array_arguments)
+	__exec_test(test_array_return)
+
+	__exec_test(test_dictionary)
+
+	__exec_test(test_object_overload)
+
+	__exec_test(test_variant_conversion_safe_from_stack_overflow)
+
+	__exec_test(test_big_integers)
+
+	__exec_test(test_callable)
+
+	print("JavaClassWrapper tests finished.")
+	print("Tests started: " + str(_test_started))
+	print("Tests completed: " + str(_test_completed))
+
+
+func test_exceptions() -> void:
+	var TestClass: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass')
+	#print(TestClass.get_java_method_list())
+
+	assert_equal(JavaClassWrapper.get_exception(), null)
+
+	assert_equal(TestClass.testExc(27), 0)
+	assert_equal(str(JavaClassWrapper.get_exception()), '<JavaObject:java.lang.NullPointerException "java.lang.NullPointerException">')
+
+	assert_equal(JavaClassWrapper.get_exception(), null)
+
+func test_multiple_signatures() -> void:
+	var TestClass: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass')
+
+	var ai := [1, 2]
+	assert_equal(TestClass.testMethod(1, ai), "IntArray: [1, 2]")
+
+	var astr := ["abc"]
+	assert_equal(TestClass.testMethod(2, astr), "IntArray: [0]")
+
+	var atstr: Array[String] = ["abc"]
+	assert_equal(TestClass.testMethod(3, atstr), "StringArray: [abc]")
+
+	var TestClass2: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass2')
+	var aobjl: Array[Object] = [
+		TestClass2.TestClass2(27),
+		TestClass2.TestClass2(135),
+	]
+	assert_equal(TestClass.testMethod(3, aobjl), "testObjects: 27 135")
+
+func test_array_arguments() -> void:
+	var TestClass: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass')
+
+	assert_equal(TestClass.testArgBoolArray([true, false, true]), "[true, false, true]")
+	assert_equal(TestClass.testArgByteArray(PackedByteArray([1, 2, 3])), "[1, 2, 3]")
+	assert_equal(TestClass.testArgCharArray("abc".to_utf16_buffer()), "abc");
+	assert_equal(TestClass.testArgShortArray(PackedInt32Array([27, 28, 29])), "[27, 28, 29]")
+	assert_equal(TestClass.testArgShortArray([27, 28, 29]), "[27, 28, 29]")
+	assert_equal(TestClass.testArgIntArray(PackedInt32Array([7, 8, 9])), "[7, 8, 9]")
+	assert_equal(TestClass.testArgIntArray([7, 8, 9]), "[7, 8, 9]")
+	assert_equal(TestClass.testArgLongArray(PackedInt64Array([17, 18, 19])), "[17, 18, 19]")
+	assert_equal(TestClass.testArgLongArray([17, 18, 19]), "[17, 18, 19]")
+	assert_equal(TestClass.testArgFloatArray(PackedFloat32Array([17.1, 18.2, 19.3])), "[17.1, 18.2, 19.3]")
+	assert_equal(TestClass.testArgFloatArray([17.1, 18.2, 19.3]), "[17.1, 18.2, 19.3]")
+	assert_equal(TestClass.testArgDoubleArray(PackedFloat64Array([37.1, 38.2, 39.3])), "[37.1, 38.2, 39.3]")
+	assert_equal(TestClass.testArgDoubleArray([37.1, 38.2, 39.3]), "[37.1, 38.2, 39.3]")
+
+func test_array_return() -> void:
+	var TestClass: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass')
+	#print(TestClass.get_java_method_list())
+
+	assert_equal(TestClass.testRetBoolArray(), [true, false, true])
+	assert_equal(TestClass.testRetWrappedBoolArray(), [true, false, true])
+
+	assert_equal(TestClass.testRetByteArray(), PackedByteArray([1, 2, 3]))
+	assert_equal(TestClass.testRetWrappedByteArray(), PackedByteArray([1, 2, 3]))
+
+	assert_equal(TestClass.testRetCharArray().get_string_from_utf16(), "abc")
+	assert_equal(TestClass.testRetWrappedCharArray().get_string_from_utf16(), "abc")
+
+	assert_equal(TestClass.testRetShortArray(), PackedInt32Array([11, 12, 13]))
+	assert_equal(TestClass.testRetWrappedShortArray(), PackedInt32Array([11, 12, 13]))
+
+	assert_equal(TestClass.testRetIntArray(), PackedInt32Array([21, 22, 23]))
+	assert_equal(TestClass.testRetWrappedIntArray(), PackedInt32Array([21, 22, 23]))
+
+	assert_equal(TestClass.testRetLongArray(), PackedInt64Array([41, 42, 43]))
+	assert_equal(TestClass.testRetWrappedLongArray(), PackedInt64Array([41, 42, 43]))
+
+	assert_equal(TestClass.testRetFloatArray(), PackedFloat32Array([31.1, 32.2, 33.3]))
+	assert_equal(TestClass.testRetWrappedFloatArray(), PackedFloat32Array([31.1, 32.2, 33.3]))
+
+	assert_equal(TestClass.testRetDoubleArray(), PackedFloat64Array([41.1, 42.2, 43.3]))
+	assert_equal(TestClass.testRetWrappedDoubleArray(), PackedFloat64Array([41.1, 42.2, 43.3]))
+
+	var obj_array = TestClass.testRetObjectArray()
+	assert_equal(str(obj_array[0]), '<JavaObject:com.godot.game.test.javaclasswrapper.TestClass2 "51">')
+	assert_equal(str(obj_array[1]), '<JavaObject:com.godot.game.test.javaclasswrapper.TestClass2 "52">')
+
+	assert_equal(TestClass.testRetStringArray(), PackedStringArray(["I", "am", "String"]))
+	assert_equal(TestClass.testRetCharSequenceArray(), PackedStringArray(["I", "am", "CharSequence"]))
+
+func test_dictionary():
+	var TestClass: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass')
+	assert_equal(TestClass.testDictionary({a = 1, b = 2}), "{a=1, b=2}")
+	assert_equal(TestClass.testRetDictionary(), {a = 1, b = 2})
+	assert_equal(TestClass.testRetDictionaryArray(), [{a = 1, b = 2}])
+	assert_equal(TestClass.testDictionaryNested({a = 1, b = [2, 3], c = 4}), "{a: 1, b: [2, 3], c: 4}")
+
+func test_object_overload():
+	var TestClass: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass')
+	var TestClass2: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass2')
+	var TestClass3: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass3')
+
+	var t2 = TestClass2.TestClass2(33)
+	var t3 = TestClass3.TestClass3("thirty three")
+
+	assert_equal(TestClass.testObjectOverload(t2), "TestClass2: 33")
+	assert_equal(TestClass.testObjectOverload(t3), "TestClass3: thirty three")
+
+	var arr_of_t2 = [t2, TestClass2.TestClass2(34)]
+	var arr_of_t3 = [t3, TestClass3.TestClass3("thirty four")]
+
+	assert_equal(TestClass.testObjectOverloadArray(arr_of_t2), "TestClass2: [33, 34]")
+	assert_equal(TestClass.testObjectOverloadArray(arr_of_t3), "TestClass3: [thirty three, thirty four]")
+
+func test_variant_conversion_safe_from_stack_overflow():
+	var TestClass: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass')
+	var arr: Array = [42]
+	var dict: Dictionary = {"arr": arr}
+	arr.append(dict)
+	# The following line will crash with stack overflow if not handled property:
+	TestClass.testDictionary(dict)
+
+func test_big_integers():
+	var TestClass: JavaClass = JavaClassWrapper.wrap('com.godot.game.test.javaclasswrapper.TestClass')
+	assert_equal(TestClass.testArgLong(4242424242), "4242424242")
+	assert_equal(TestClass.testArgLong(-4242424242), "-4242424242")
+	assert_equal(TestClass.testDictionary({a = 4242424242, b = -4242424242}), "{a=4242424242, b=-4242424242}")
+
+func test_callable():
+	var android_runtime = Engine.get_singleton("AndroidRuntime")
+	assert_true(android_runtime != null)
+
+	var cb1_data := {called = false}
+	var cb1 = func():
+		cb1_data['called'] = true
+		return null
+	android_runtime.createRunnableFromGodotCallable(cb1).run()
+	assert_equal(cb1_data['called'], true)
+
+```
+
+### FILE: ./android/build/src/instrumented/assets/test/javaclasswrapper/java_class_wrapper_tests.gd.uid
+
+```text
+uid://3ql82ggk41xc
+
+```
+
+### FILE: ./android/build/src/instrumented/java/com/godot/game/test/GodotAppInstrumentedTestPlugin.kt
+
+```text
+/**************************************************************************/
+/*  GodotAppInstrumentedTestPlugin.kt                                     */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+package com.godot.game.test
+
+import android.util.Log
+import android.widget.Toast
+import org.godotengine.godot.Godot
+import org.godotengine.godot.plugin.GodotPlugin
+import org.godotengine.godot.plugin.UsedByGodot
+import org.godotengine.godot.plugin.SignalInfo
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+
+/**
+ * [GodotPlugin] used to drive instrumented tests.
+ */
+class GodotAppInstrumentedTestPlugin(godot: Godot) : GodotPlugin(godot) {
+
+	companion object {
+		private val TAG = GodotAppInstrumentedTestPlugin::class.java.simpleName
+		private const val MAIN_LOOP_STARTED_LATCH_KEY = "main_loop_started_latch"
+
+		private const val JAVACLASSWRAPPER_TESTS = "javaclasswrapper_tests"
+		private const val FILE_ACCESS_TESTS = "file_access_tests"
+
+		private val LAUNCH_TESTS_SIGNAL = SignalInfo("launch_tests", String::class.java)
+
+		private val SIGNALS = setOf(
+			LAUNCH_TESTS_SIGNAL
+		)
+	}
+
+	private val testResults = ConcurrentHashMap<String, Result<Any>>()
+	private val latches = ConcurrentHashMap<String, CountDownLatch>()
+
+	init {
+		// Add a countdown latch that is triggered when `onGodotMainLoopStarted` is fired.
+		// This will be used by tests to wait until the engine is ready.
+		latches[MAIN_LOOP_STARTED_LATCH_KEY] = CountDownLatch(1)
+	}
+
+	override fun getPluginName() = "GodotAppInstrumentedTestPlugin"
+
+	override fun getPluginSignals() = SIGNALS
+
+	override fun onGodotMainLoopStarted() {
+		super.onGodotMainLoopStarted()
+		latches.remove(MAIN_LOOP_STARTED_LATCH_KEY)?.countDown()
+	}
+
+	/**
+	 * Used by the instrumented test to wait until the Godot main loop is up and running.
+	 */
+	internal fun waitForGodotMainLoopStarted() {
+		// Wait on the CountDownLatch for `onGodotMainLoopStarted`
+		try {
+			latches[MAIN_LOOP_STARTED_LATCH_KEY]?.await()
+		} catch (e: InterruptedException) {
+			Log.e(TAG, "Unable to wait for Godot main loop started event.", e)
+		}
+	}
+
+	/**
+	 * This launches the JavaClassWrapper tests, and wait until the tests are complete before returning.
+	 */
+	internal fun runJavaClassWrapperTests(): Result<Any>? {
+		return launchTests(JAVACLASSWRAPPER_TESTS)
+	}
+
+	/**
+	 * Launches the FileAccess tests, and wait until the tests are complete before returning.
+	 */
+	internal fun runFileAccessTests(): Result<Any>? {
+		return launchTests(FILE_ACCESS_TESTS)
+	}
+
+	private fun launchTests(testLabel: String): Result<Any>? {
+		val latch = latches.getOrPut(testLabel) { CountDownLatch(1) }
+		emitSignal(LAUNCH_TESTS_SIGNAL.name, testLabel)
+		return try {
+			latch.await()
+			val result = testResults.remove(testLabel)
+			result
+		} catch (e: InterruptedException) {
+			Log.e(TAG, "Unable to wait for completion for $testLabel", e)
+			null
+		}
+	}
+
+	/**
+	 * Callback invoked from gdscript when the tests are completed.
+	 */
+	@UsedByGodot
+	fun onTestsCompleted(testLabel: String, passes: Int, failures: Int) {
+		Log.d(TAG, "$testLabel tests completed")
+		val result = if (failures == 0) {
+			Result.success(passes)
+		} else {
+			Result.failure(AssertionError("$failures tests failed!"))
+		}
+
+		completeTest(testLabel, result)
+	}
+
+	@UsedByGodot
+	fun onTestsFailed(testLabel: String, failureMessage: String) {
+		Log.d(TAG, "$testLabel tests failed")
+		val result: Result<Any> = Result.failure(AssertionError(failureMessage))
+		completeTest(testLabel, result)
+	}
+
+	private fun completeTest(testKey: String, result: Result<Any>) {
+		testResults[testKey] = result
+		latches.remove(testKey)?.countDown()
+	}
+
+	@UsedByGodot
+	fun helloWorld() {
+		runOnHostThread {
+			Toast.makeText(activity, "Toast from Android plugin", Toast.LENGTH_LONG).show()
+			Log.v(pluginName, "Hello World")
+		}
+	}
+}
+
+```
+
+### FILE: ./android/build/src/instrumented/java/com/godot/game/test/javaclasswrapper/TestClass2.kt
+
+```text
+/**************************************************************************/
+/*  TestClass2.kt                                                         */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+package com.godot.game.test.javaclasswrapper
+
+class TestClass2(private val value: Int) {
+    fun getValue(): Int {
+        return value
+    }
+    override fun toString(): String {
+        return value.toString()
+    }
+}
+
+```
+
+### FILE: ./android/build/src/instrumented/java/com/godot/game/test/javaclasswrapper/TestClass3.kt
+
+```text
+/**************************************************************************/
+/*  TestClass3.kt                                                         */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+package com.godot.game.test.javaclasswrapper
+
+class TestClass3(private val value: String) {
+    fun getValue(): String {
+        return value
+    }
+    override fun toString(): String {
+        return value
+    }
+}
+
+```
+
+### FILE: ./android/build/src/instrumented/java/com/godot/game/test/javaclasswrapper/TestClass.kt
+
+```text
+/**************************************************************************/
+/*  TestClass.kt                                                          */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+package com.godot.game.test.javaclasswrapper
+
+import org.godotengine.godot.Dictionary
+import kotlin.collections.contentToString
+import kotlin.collections.joinToString
+
+class TestClass {
+	companion object {
+		@JvmStatic
+		fun stringify(value: Any?): String {
+			return when (value) {
+				null -> "null"
+				is Map<*, *> -> {
+					val entries = value.entries.joinToString(", ") { (k, v) -> "${stringify(k)}: ${stringify(v)}" }
+					"{$entries}"
+				}
+
+				is List<*> -> value.joinToString(prefix = "[", postfix = "]") { stringify(it) }
+				is Array<*> -> value.joinToString(prefix = "[", postfix = "]") { stringify(it) }
+				is IntArray -> value.joinToString(prefix = "[", postfix = "]")
+				is LongArray -> value.joinToString(prefix = "[", postfix = "]")
+				is FloatArray -> value.joinToString(prefix = "[", postfix = "]")
+				is DoubleArray -> value.joinToString(prefix = "[", postfix = "]")
+				is BooleanArray -> value.joinToString(prefix = "[", postfix = "]")
+				is CharArray -> value.joinToString(prefix = "[", postfix = "]")
+				else -> value.toString()
+			}
+		}
+
+		@JvmStatic
+		fun testDictionary(d: Dictionary): String {
+			return d.toString()
+		}
+
+		@JvmStatic
+		fun testDictionaryNested(d: Dictionary): String {
+			return stringify(d)
+		}
+
+		@JvmStatic
+		fun testRetDictionary(): Dictionary {
+			var d = Dictionary()
+			d.putAll(mapOf("a" to 1, "b" to 2))
+			return d
+		}
+
+		@JvmStatic
+		fun testRetDictionaryArray(): Array<Dictionary> {
+			var d = Dictionary()
+			d.putAll(mapOf("a" to 1, "b" to 2))
+			return arrayOf(d)
+		}
+
+		@JvmStatic
+		fun testMethod(int: Int, array: IntArray): String {
+			return "IntArray: " + array.contentToString()
+		}
+
+		@JvmStatic
+		fun testMethod(int: Int, vararg args: String): String {
+			return "StringArray: " + args.contentToString()
+		}
+
+		@JvmStatic
+		fun testMethod(int: Int, objects: Array<TestClass2>): String {
+			return "testObjects: " + objects.joinToString(separator = " ") { it.getValue().toString() }
+		}
+
+		@JvmStatic
+		fun testExc(i: Int): Int {
+			val s: String? = null
+			s!!.length
+			return i
+		}
+
+		@JvmStatic
+		fun testArgLong(a: Long): String {
+			return "${a}"
+		}
+
+		@JvmStatic
+		fun testArgBoolArray(a: BooleanArray): String {
+			return a.contentToString();
+		}
+
+		@JvmStatic
+		fun testArgByteArray(a: ByteArray): String {
+			return a.contentToString();
+		}
+
+		@JvmStatic
+		fun testArgCharArray(a: CharArray): String {
+			return a.joinToString("")
+		}
+
+		@JvmStatic
+		fun testArgShortArray(a: ShortArray): String {
+			return a.contentToString();
+		}
+
+		@JvmStatic
+		fun testArgIntArray(a: IntArray): String {
+			return a.contentToString();
+		}
+
+		@JvmStatic
+		fun testArgLongArray(a: LongArray): String {
+			return a.contentToString();
+		}
+
+		@JvmStatic
+		fun testArgFloatArray(a: FloatArray): String {
+			return a.contentToString();
+		}
+
+		@JvmStatic
+		fun testArgDoubleArray(a: DoubleArray): String {
+			return a.contentToString();
+		}
+
+		@JvmStatic
+		fun testRetBoolArray(): BooleanArray {
+			return booleanArrayOf(true, false, true)
+		}
+
+		@JvmStatic
+		fun testRetByteArray(): ByteArray {
+			return byteArrayOf(1, 2, 3)
+		}
+
+		@JvmStatic
+		fun testRetCharArray(): CharArray {
+			return "abc".toCharArray()
+		}
+
+		@JvmStatic
+		fun testRetShortArray(): ShortArray {
+			return shortArrayOf(11, 12, 13)
+		}
+
+		@JvmStatic
+		fun testRetIntArray(): IntArray {
+			return intArrayOf(21, 22, 23)
+		}
+
+		@JvmStatic
+		fun testRetLongArray(): LongArray {
+			return longArrayOf(41, 42, 43)
+		}
+
+		@JvmStatic
+		fun testRetFloatArray(): FloatArray {
+			return floatArrayOf(31.1f, 32.2f, 33.3f)
+		}
+
+		@JvmStatic
+		fun testRetDoubleArray(): DoubleArray {
+			return doubleArrayOf(41.1, 42.2, 43.3)
+		}
+
+		@JvmStatic
+		fun testRetWrappedBoolArray(): Array<Boolean> {
+			return arrayOf(true, false, true)
+		}
+
+		@JvmStatic
+		fun testRetWrappedByteArray(): Array<Byte> {
+			return arrayOf(1, 2, 3)
+		}
+
+		@JvmStatic
+		fun testRetWrappedCharArray(): Array<Char> {
+			return arrayOf('a', 'b', 'c')
+		}
+
+		@JvmStatic
+		fun testRetWrappedShortArray(): Array<Short> {
+			return arrayOf(11, 12, 13)
+		}
+
+		@JvmStatic
+		fun testRetWrappedIntArray(): Array<Int> {
+			return arrayOf(21, 22, 23)
+		}
+
+		@JvmStatic
+		fun testRetWrappedLongArray(): Array<Long> {
+			return arrayOf(41, 42, 43)
+		}
+
+		@JvmStatic
+		fun testRetWrappedFloatArray(): Array<Float> {
+			return arrayOf(31.1f, 32.2f, 33.3f)
+		}
+
+		@JvmStatic
+		fun testRetWrappedDoubleArray(): Array<Double> {
+			return arrayOf(41.1, 42.2, 43.3)
+		}
+
+		@JvmStatic
+		fun testRetObjectArray(): Array<TestClass2> {
+			return arrayOf(TestClass2(51), TestClass2(52));
+		}
+
+		@JvmStatic
+		fun testRetStringArray(): Array<String> {
+			return arrayOf("I", "am", "String")
+		}
+
+		@JvmStatic
+		fun testRetCharSequenceArray(): Array<CharSequence> {
+			return arrayOf("I", "am", "CharSequence")
+		}
+
+		@JvmStatic
+		fun testObjectOverload(a: TestClass2): String {
+			return "TestClass2: $a"
+		}
+
+		@JvmStatic
+		fun testObjectOverload(a: TestClass3): String {
+			return "TestClass3: $a"
+		}
+
+		@JvmStatic
+		fun testObjectOverloadArray(a: Array<TestClass2>): String {
+			return "TestClass2: " + a.contentToString()
+		}
+
+		@JvmStatic
+		fun testObjectOverloadArray(a: Array<TestClass3>): String {
+			return "TestClass3: " + a.contentToString()
+		}
+	}
+}
+
+```
+
+### FILE: ./android/build/src/instrumented/res/values/strings.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="godot_project_name_string">Godot App Instrumented Tests</string>
+</resources>
+
+```
+
+### FILE: ./android/build/src/main/AndroidManifest.xml
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:versionCode="1"
+    android:versionName="1.0"
+    android:installLocation="auto" >
+
+    <supports-screens
+        android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:xlargeScreens="true" />
+
+    <uses-feature
+        android:glEsVersion="0x00030000"
+        android:required="true" />
+
+    <application
+        android:label="@string/godot_project_name_string"
+        android:allowBackup="false"
+        android:icon="@mipmap/icon"
+        android:appCategory="game"
+        android:isGame="true"
+        android:hasFragileUserData="false"
+        android:usesCleartextTraffic="true"
+        android:requestLegacyExternalStorage="false"
+        tools:ignore="GoogleAppIndexingWarning" >
+        <profileable
+            android:shell="true"
+            android:enabled="true"
+            tools:targetApi="29" />
+
+        <activity
+            android:name=".GodotApp"
+            android:theme="@style/GodotAppSplashTheme"
+            android:launchMode="singleInstancePerTask"
+            android:excludeFromRecents="false"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="layoutDirection|locale|orientation|keyboardHidden|screenSize|smallestScreenSize|density|keyboard|navigation|screenLayout|uiMode"
+            android:resizeableActivity="false"
+            tools:ignore="UnusedAttribute" />
+        <activity-alias
+            android:name=".GodotAppLauncher"
+            android:targetActivity=".GodotApp"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+    </application>
+
+</manifest>
+
+```
+
+### FILE: ./android/build/src/main/assets/.godot/global_script_class_cache.cfg
+
+```text
+list=[]
+
+```
+
+### FILE: ./android/build/src/main/assets/.godot/mono/publish/arm64/Quest3.deps.json
+
+```text
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0/android-arm64",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {},
+    ".NETCoreApp,Version=v8.0/android-arm64": {
+      "Quest3/1.0.0": {
+        "dependencies": {
+          "Godot.SourceGenerators": "4.6.0",
+          "GodotSharp": "4.6.0",
+          "runtimepack.Microsoft.NETCore.App.Runtime.Mono.android-arm64": "8.0.25"
+        },
+        "runtime": {
+          "Quest3.dll": {}
+        }
+      },
+      "runtimepack.Microsoft.NETCore.App.Runtime.Mono.android-arm64/8.0.25": {
+        "runtime": {
+          "Microsoft.CSharp.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "Microsoft.VisualBasic.Core.dll": {
+            "assemblyVersion": "13.0.0.0",
+            "fileVersion": "13.0.2526.11203"
+          },
+          "Microsoft.VisualBasic.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "Microsoft.Win32.Primitives.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "Microsoft.Win32.Registry.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.AppContext.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Buffers.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Collections.Concurrent.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Collections.Immutable.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Collections.NonGeneric.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Collections.Specialized.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Collections.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.ComponentModel.Annotations.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.ComponentModel.DataAnnotations.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.ComponentModel.EventBasedAsync.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.ComponentModel.Primitives.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.ComponentModel.TypeConverter.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.ComponentModel.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Configuration.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Console.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Core.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Data.Common.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Data.DataSetExtensions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Data.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Diagnostics.Contracts.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Diagnostics.Debug.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Diagnostics.DiagnosticSource.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Diagnostics.FileVersionInfo.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Diagnostics.Process.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Diagnostics.StackTrace.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Diagnostics.TextWriterTraceListener.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Diagnostics.Tools.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Diagnostics.TraceSource.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Diagnostics.Tracing.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Drawing.Primitives.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Drawing.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Dynamic.Runtime.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Formats.Asn1.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Formats.Tar.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Globalization.Calendars.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Globalization.Extensions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Globalization.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.Compression.Brotli.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.Compression.FileSystem.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.Compression.ZipFile.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.Compression.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.FileSystem.AccessControl.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.FileSystem.DriveInfo.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.FileSystem.Primitives.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.FileSystem.Watcher.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.FileSystem.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.IsolatedStorage.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.MemoryMappedFiles.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.Pipes.AccessControl.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.Pipes.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.UnmanagedMemoryStream.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.IO.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Linq.Expressions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Linq.Parallel.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Linq.Queryable.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Linq.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Memory.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.Http.Json.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.Http.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.HttpListener.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.Mail.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.NameResolution.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.NetworkInformation.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.Ping.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.Primitives.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.Quic.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.Requests.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.Security.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.ServicePoint.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.Sockets.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.WebClient.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.WebHeaderCollection.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.WebProxy.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.WebSockets.Client.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.WebSockets.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Net.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Numerics.Vectors.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Numerics.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.ObjectModel.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Private.DataContractSerialization.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Private.Uri.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Private.Xml.Linq.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Private.Xml.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Reflection.DispatchProxy.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Reflection.Emit.ILGeneration.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Reflection.Emit.Lightweight.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Reflection.Emit.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Reflection.Extensions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Reflection.Metadata.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Reflection.Primitives.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Reflection.TypeExtensions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Reflection.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Resources.Reader.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Resources.ResourceManager.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Resources.Writer.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.CompilerServices.Unsafe.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.CompilerServices.VisualC.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.Extensions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.Handles.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.InteropServices.JavaScript.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.InteropServices.RuntimeInformation.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.InteropServices.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.Intrinsics.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.Loader.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.Numerics.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.Serialization.Formatters.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.Serialization.Json.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.Serialization.Primitives.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.Serialization.Xml.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.Serialization.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Runtime.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.AccessControl.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Claims.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Cryptography.Algorithms.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Cryptography.Cng.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Cryptography.Csp.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Cryptography.Encoding.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Cryptography.OpenSsl.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Cryptography.Primitives.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Cryptography.X509Certificates.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Cryptography.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Principal.Windows.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.Principal.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.SecureString.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Security.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.ServiceModel.Web.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.ServiceProcess.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Text.Encoding.CodePages.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Text.Encoding.Extensions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Text.Encoding.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Text.Encodings.Web.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Text.Json.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Text.RegularExpressions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Threading.Channels.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Threading.Overlapped.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Threading.Tasks.Dataflow.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Threading.Tasks.Extensions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Threading.Tasks.Parallel.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Threading.Tasks.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Threading.Thread.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Threading.ThreadPool.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Threading.Timer.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Threading.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Transactions.Local.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Transactions.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.ValueTuple.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Web.HttpUtility.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Web.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Windows.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Xml.Linq.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Xml.ReaderWriter.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Xml.Serialization.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Xml.XDocument.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Xml.XPath.XDocument.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Xml.XPath.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Xml.XmlDocument.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Xml.XmlSerializer.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.Xml.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "System.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "WindowsBase.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "mscorlib.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "netstandard.dll": {
+            "assemblyVersion": "2.1.0.0",
+            "fileVersion": "8.0.2526.11203"
+          }
+        },
+        "native": {
+          "System.Private.CoreLib.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.2526.11203"
+          },
+          "libSystem.Globalization.Native.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libSystem.Globalization.Native.so": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libSystem.IO.Compression.Native.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libSystem.IO.Compression.Native.so": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libSystem.Native.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libSystem.Native.so": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libSystem.Security.Cryptography.Native.Android.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libSystem.Security.Cryptography.Native.Android.dex": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libSystem.Security.Cryptography.Native.Android.jar": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libSystem.Security.Cryptography.Native.Android.so": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-debugger-static.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-debugger-stub-static.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-debugger.so": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-diagnostics_tracing-static.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-diagnostics_tracing-stub-static.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-diagnostics_tracing.so": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-hot_reload-static.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-hot_reload-stub-static.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-hot_reload.so": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-marshal-ilgen-static.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-marshal-ilgen-stub-static.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmono-component-marshal-ilgen.so": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmonosgen-2.0.a": {
+            "fileVersion": "0.0.0.0"
+          },
+          "libmonosgen-2.0.so": {
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "Godot.SourceGenerators/4.6.0": {},
+      "GodotSharp/4.6.0": {
+        "runtime": {
+          "lib/net8.0/GodotSharp.dll": {
+            "assemblyVersion": "4.6.0.0",
+            "fileVersion": "4.6.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Quest3/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "runtimepack.Microsoft.NETCore.App.Runtime.Mono.android-arm64/8.0.25": {
+      "type": "runtimepack",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Godot.SourceGenerators/4.6.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-zPXb65IjRK6NRAq44Rz5AfI9uZc0RkhOMOVzsYuauaWwbsiKsrM0Dtl1t2A90JGbVV4Tk02qVPa3JrR8haFqIw==",
+      "path": "godot.sourcegenerators/4.6.0",
+      "hashPath": "godot.sourcegenerators.4.6.0.nupkg.sha512"
+    },
+    "GodotSharp/4.6.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-k4VnWoOPueAkTtFoUzhDnP5e4Qs3Gho0ls/0VyHD81F90HeVBvT0YlsGtS5fvkrmxl731d96bKRWNL4+Rd977g==",
+      "path": "godotsharp/4.6.0",
+      "hashPath": "godotsharp.4.6.0.nupkg.sha512"
+    }
+  },
+  "runtimes": {
+    "android-arm64": [
+      "android",
+      "linux-bionic-arm64",
+      "linux-bionic",
+      "linux-arm64",
+      "linux",
+      "unix-arm64",
+      "unix",
+      "any",
+      "base"
+    ]
+  }
+}
+```
+
+### FILE: ./android/build/src/main/assets/.godot/mono/publish/arm64/Quest3.runtimeconfig.json
+
+```text
+{
+  "runtimeOptions": {
+    "tfm": "net8.0",
+    "includedFrameworks": [
+      {
+        "name": "Microsoft.NETCore.App",
+        "version": "8.0.25"
+      }
+    ],
+    "configProperties": {
+      "System.Reflection.Metadata.MetadataUpdater.IsSupported": false,
+      "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false
+    }
+  }
+}
+```
+
+### FILE: ./android/build/src/main/assets/icon.svg.import
+
+```text
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://7h546mijsddk"
+path="res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex"
+metadata={
+"vram_texture": false
+}
+ 
+```
+
+### FILE: ./android/build/src/main/assets/scripts/stereo/Stereo3DViewer.cs
+
+```text
+
+
+```
+
+### FILE: ./android/build/src/main/java/com/godot/game/GodotApp.java
+
+```text
+/**************************************************************************/
+/*  GodotApp.java                                                         */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+package com.godot.game;
+
+import org.godotengine.godot.Godot;
+import org.godotengine.godot.GodotActivity;
+import org.godotengine.godot.plugin.GodotPlugin;
+
+import android.os.Bundle;
+import android.util.Log;
+
+import androidx.activity.EdgeToEdge;
+import androidx.core.splashscreen.SplashScreen;
+
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * Template activity for Godot Android builds.
+ * Feel free to extend and modify this class for your custom logic.
+ */
+public class GodotApp extends GodotActivity {
+	static {
+		// .NET libraries.
+		if (BuildConfig.FLAVOR.equals("mono")) {
+			try {
+				Log.v("GODOT", "Loading System.Security.Cryptography.Native.Android library");
+				System.loadLibrary("System.Security.Cryptography.Native.Android");
+			} catch (UnsatisfiedLinkError e) {
+				Log.e("GODOT", "Unable to load System.Security.Cryptography.Native.Android library");
+			}
+		}
+	}
+
+	private final Runnable updateWindowAppearance = () -> {
+		Godot godot = getGodot();
+		if (godot != null) {
+			godot.enableImmersiveMode(godot.isInImmersiveMode(), true);
+			godot.enableEdgeToEdge(godot.isInEdgeToEdgeMode(), true);
+			godot.setSystemBarsAppearance();
+		}
+	};
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		SplashScreen.installSplashScreen(this);
+		EdgeToEdge.enable(this);
+		super.onCreate(savedInstanceState);
+	}
+
+	@Override
+	public Set<GodotPlugin> getHostPlugins(Godot godot) {
+		Set<GodotPlugin> plugins = new HashSet<>(super.getHostPlugins(godot));
+		plugins.add(new QuestExternalTexture(godot));
+		return plugins;
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		updateWindowAppearance.run();
+	}
+
+	@Override
+	public void onGodotMainLoopStarted() {
+		super.onGodotMainLoopStarted();
+		runOnUiThread(updateWindowAppearance);
+	}
+
+	@Override
+	public void onGodotForceQuit(Godot instance) {
+		if (!BuildConfig.FLAVOR.equals("instrumented")) {
+			// For instrumented builds, we disable force-quitting to allow the instrumented tests to complete
+			// successfully, otherwise they fail when the process crashes.
+			super.onGodotForceQuit(instance);
+		}
+	}
+}
+
+```
+
+### FILE: ./android/build/src/main/java/com/godot/game/QuestExternalTexture.java
+
+```text
+package com.godot.game;
+
+import android.graphics.SurfaceTexture;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.util.Log;
+import android.view.Surface;
+
+import org.godotengine.godot.Godot;
+import org.godotengine.godot.plugin.GodotPlugin;
+import org.godotengine.godot.plugin.UsedByGodot;
+
+import java.io.IOException;
+
+import javax.microedition.khronos.opengles.GL10;
+
+/**
+ * QuestExternalTexture plugin (Godot Android)
+ *
+ * Akış:
+ * 1) C# ExternalTexture oluşturur ve GetExternalTextureId() ile GL id alır.
+ * 2) configure_external_texture(id, w, h) çağrılır.
+ * 3) set_stream_url(url) + start_stream() çağrılır.
+ * 4) MediaPlayer stream'i SurfaceTexture üstüne decode eder.
+ * 5) onGLDrawFrame içinde updateTexImage() çağrıları ile yeni frame Godot'a akar.
+ */
+public class QuestExternalTexture extends GodotPlugin {
+
+    private static final String TAG = "QuestExternalTexture";
+
+    private final Object lock = new Object();
+
+    private SurfaceTexture surfaceTexture;
+    private Surface surface;
+    private MediaPlayer mediaPlayer;
+
+    private int externalTextureId = -1;
+    private int textureWidth = 1280;
+    private int textureHeight = 720;
+
+    private volatile boolean frameAvailable = false;
+    private volatile boolean streamActive = false;
+    private volatile boolean streamStarting = false;
+    private volatile boolean playerPrepared = false;
+    private volatile String lastError = "";
+    private volatile String streamUrl = "";
+
+    public QuestExternalTexture(Godot godot) {
+        super(godot);
+    }
+
+    @Override
+    public String getPluginName() {
+        return "QuestExternalTexture";
+    }
+
+    @UsedByGodot
+    public boolean configure_external_texture(long textureId, int width, int height) {
+        int glTextureId = (int) textureId;
+        if (glTextureId <= 0) {
+            setLastError("Geçersiz external texture id: " + textureId);
+            return false;
+        }
+
+        synchronized (lock) {
+            releaseSurfaceLocked();
+
+            externalTextureId = glTextureId;
+            textureWidth = Math.max(16, width);
+            textureHeight = Math.max(16, height);
+
+            try {
+                surfaceTexture = new SurfaceTexture(externalTextureId);
+                surfaceTexture.setDefaultBufferSize(textureWidth, textureHeight);
+                surfaceTexture.setOnFrameAvailableListener(texture -> frameAvailable = true);
+                surface = new Surface(surfaceTexture);
+                frameAvailable = false;
+                streamActive = false;
+                streamStarting = false;
+                playerPrepared = false;
+                clearLastError();
+                Log.i(TAG, "External texture configure edildi. id=" + externalTextureId + " size=" + textureWidth + "x" + textureHeight);
+                return true;
+            } catch (Throwable t) {
+                setLastError("SurfaceTexture oluşturma hatası: " + t.getMessage());
+                releaseSurfaceLocked();
+                return false;
+            }
+        }
+    }
+
+    @UsedByGodot
+    public boolean set_stream_url(String url) {
+        if (url == null) {
+            setLastError("Stream URL null olamaz.");
+            return false;
+        }
+
+        String trimmed = url.trim();
+        if (trimmed.isEmpty()) {
+            setLastError("Stream URL boş olamaz.");
+            return false;
+        }
+
+        synchronized (lock) {
+            streamUrl = trimmed;
+            clearLastError();
+        }
+
+        return true;
+    }
+
+    @UsedByGodot
+    public boolean start_stream() {
+        synchronized (lock) {
+            if (surface == null) {
+                setLastError("Surface hazır değil. Önce configure_external_texture çağrılmalı.");
+                return false;
+            }
+            if (streamUrl == null || streamUrl.isEmpty()) {
+                setLastError("Stream URL ayarlanmamış.");
+                return false;
+            }
+
+            streamStarting = true;
+            streamActive = false;
+            clearLastError();
+        }
+
+        runOnUiThread(this::startStreamOnUiThread);
+        return true;
+    }
+
+    private void startStreamOnUiThread() {
+        synchronized (lock) {
+            try {
+                stopMediaPlayerLocked();
+
+                mediaPlayer = new MediaPlayer();
+                mediaPlayer.setLooping(true);
+                mediaPlayer.setVolume(0f, 0f);
+                mediaPlayer.setScreenOnWhilePlaying(false);
+                mediaPlayer.setSurface(surface);
+
+                mediaPlayer.setOnPreparedListener(mp -> {
+                    synchronized (lock) {
+                        playerPrepared = true;
+                        streamStarting = false;
+                        streamActive = true;
+                        clearLastError();
+                    }
+                    try {
+                        mp.start();
+                    } catch (IllegalStateException e) {
+                        setLastError("MediaPlayer start hatası: " + e.getMessage());
+                    }
+                });
+
+                mediaPlayer.setOnCompletionListener(mp -> {
+                    synchronized (lock) {
+                        streamStarting = false;
+                        streamActive = false;
+                        playerPrepared = false;
+                    }
+                });
+
+                mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                    synchronized (lock) {
+                        streamStarting = false;
+                        streamActive = false;
+                        playerPrepared = false;
+                        setLastError("MediaPlayer error what=" + what + " extra=" + extra);
+                    }
+                    return true;
+                });
+
+                mediaPlayer.setOnInfoListener((mp, what, extra) -> false);
+                mediaPlayer.setOnVideoSizeChangedListener((mp, w, h) -> {
+                    synchronized (lock) {
+                        textureWidth = Math.max(16, w);
+                        textureHeight = Math.max(16, h);
+                        if (surfaceTexture != null) {
+                            try {
+                                surfaceTexture.setDefaultBufferSize(textureWidth, textureHeight);
+                            } catch (Throwable ignored) {
+                            }
+                        }
+                    }
+                });
+
+                mediaPlayer.setDataSource(getContext(), Uri.parse(streamUrl));
+                mediaPlayer.prepareAsync();
+            } catch (IOException | IllegalArgumentException | IllegalStateException e) {
+                streamStarting = false;
+                streamActive = false;
+                playerPrepared = false;
+                setLastError("Stream başlatma hatası: " + e.getMessage());
+                stopMediaPlayerLocked();
+            }
+        }
+    }
+
+    @UsedByGodot
+    public void stop_stream() {
+        runOnUiThread(this::stopStreamOnUiThread);
+    }
+
+    private void stopStreamOnUiThread() {
+        synchronized (lock) {
+            stopMediaPlayerLocked();
+            streamStarting = false;
+            streamActive = false;
+            playerPrepared = false;
+            frameAvailable = false;
+        }
+    }
+
+    @UsedByGodot
+    public boolean is_stream_active() {
+        return streamActive;
+    }
+
+    @UsedByGodot
+    public boolean is_stream_starting() {
+        return streamStarting;
+    }
+
+    @UsedByGodot
+    public String get_last_error() {
+        return lastError == null ? "" : lastError;
+    }
+
+    @Override
+    public void onGLDrawFrame(GL10 gl) {
+        SurfaceTexture st = surfaceTexture;
+        if (st == null || !frameAvailable) {
+            return;
+        }
+
+        try {
+            st.updateTexImage();
+            frameAvailable = false;
+        } catch (Throwable t) {
+            setLastError("updateTexImage hatası: " + t.getMessage());
+        }
+    }
+
+    @Override
+    public void onMainPause() {
+        super.onMainPause();
+        stop_stream();
+    }
+
+    @Override
+    public void onMainDestroy() {
+        super.onMainDestroy();
+        runOnUiThread(() -> {
+            synchronized (lock) {
+                stopMediaPlayerLocked();
+                releaseSurfaceLocked();
+                streamStarting = false;
+                streamActive = false;
+                playerPrepared = false;
+                frameAvailable = false;
+            }
+        });
+    }
+
+    private void stopMediaPlayerLocked() {
+        if (mediaPlayer == null) {
+            return;
+        }
+
+        try {
+            mediaPlayer.setSurface(null);
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            if (playerPrepared || mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
+            }
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            mediaPlayer.reset();
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            mediaPlayer.release();
+        } catch (Throwable ignored) {
+        }
+
+        mediaPlayer = null;
+        playerPrepared = false;
+    }
+
+    private void releaseSurfaceLocked() {
+        if (surface != null) {
+            try {
+                surface.release();
+            } catch (Throwable ignored) {
+            }
+            surface = null;
+        }
+
+        if (surfaceTexture != null) {
+            try {
+                surfaceTexture.release();
+            } catch (Throwable ignored) {
+            }
+            surfaceTexture = null;
+        }
+    }
+
+    private void clearLastError() {
+        lastError = "";
+    }
+
+    private void setLastError(String message) {
+        lastError = message == null ? "" : message;
+        Log.e(TAG, lastError);
+    }
+}
+
+```
+
+### FILE: ./docs/QUEST3_EXPORT_CHECKLIST_TR.md
+
+```text
+# Quest3 APK Export Checklist
+
+## 1) Android Export Hazırlık
+
+- Godot Android export template kurulu
+- Keystore hazır (debug/release)
+- Android SDK/JDK path Godot'ta tanımlı
+
+Bu çalışma ortamında doğrulanan değerler:
+- Java SDK Path: `/usr/lib/jvm/java-17-openjdk-amd64`
+- Android SDK Path: `/home/bnfnc/Android/Sdk`
+
+## 2) Project Settings
+
+- Main Scene -> `res://scenes/StereoViewScene.tscn`
+- Stereo sahne 3D mesh + SubViewport yapısında çalışıyor olmalı
+- `NetworkStreamUrl` aynı Wi‑Fi ağındaki kaynak URL ile ayarlı olmalı
+
+## 3) Export Preset (Android)
+
+- `Project -> Export -> Add... -> Android`
+- Package name ayarla (`com.bnfnc.quest3` gibi gerçek bir unique name)
+- Export path doldur (`build/android/Quest3-tablet-debug.apk`)
+- `Gradle Build = ON` (C# `net8.0` projesinde template tarafı `net9.0` uyarısını pratikte aşmak için)
+- Permissions:
+  - INTERNET
+  - ACCESS_NETWORK_STATE
+  - ACCESS_WIFI_STATE
+- XR/OpenXR ihtiyacına göre ilgili ayarları aç
+
+> Not: Export ekranında `net8.0 -> net9.0 template` uyarısı görürsen iki seçenek var:
+> 1) **Önerilen (bu projede ayarlandı):** Gradle Build ON ile export almak.
+> 2) Projeyi `net9.0` hedefleyip .NET 9 SDK kurmak.
+
+## 4) Build Öncesi Test
+
+- Laptop sender çalışıyor mu?
+  - `./tools/stream/start_rtsp_sender.sh`
+  - `./tools/stream/status_rtsp_sender.sh`
+  - Gerekirse manuel kamera: `./tools/stream/start_rtsp_sender.sh /dev/video1`
+- `StereoViewScene` açıldığında görüntü 3D mesh üstünde geliyor mu?
+- Ortada çizgi / debug overlay / split 2D UI olmadığını doğrula.
+- `EyeTextureShiftPixels` ve `EyeTextureZoom` ayarları beklendiği gibi çalışıyor mu?
+
+## 5) Build ve Kurulum
+
+- Export APK
+- `adb install -r <apk_adi>.apk`
+- Quest içinde uygulamayı çalıştır
+
+## 6) Sorun Giderme
+
+- Siyah ekran: `NetworkStreamUrl` yanlış veya kaynağa erişim yok olabilir.
+- Sender açılmıyorsa docker servis durumunu kontrol et (`systemctl status docker`).
+- Laptop IP değiştiyse URL’i güncelle (örnek: `rtsp://192.168.2.207:8554/quest3`).
+- Düşük çekim gücü gecikmeye sebep olur; mümkünse 5 GHz veya mobil hotspot ile kısa mesafe test et.
+- Java singleton/plugin kullanılacaksa:
+  - singleton adı `QuestExternalTexture`
+  - `configure_external_texture` / `set_stream_url` / `start_stream` metodlarının erişilebilir olduğunu doğrula.
+
+```
+
+### FILE: ./docs/SETUP_TR.md
+
+```text
+# Quest3 / Tablet - 3D External Texture Kurulum Rehberi
+
+Bu proje yalnızca **network external texture** akışını kullanır. Amaç:
+
+- 2D UI olmadan,
+- iki `SubViewport` ile stereo üretip,
+- görüntüyü 3D mesh üzerinde göstermek,
+- default ekranda tam ekran tek göz çıktısı vermektir.
+
+## Dosya Mimarisi
+
+- `scenes/StereoViewScene.tscn` -> ana 3D stereo sahne
+- `scripts/stereo/Stereo3DViewer.cs` -> external texture + stereo mesh kontrolü
+
+## Sahne Akışı
+
+`StereoViewScene` içinde:
+
+- `LeftEyeViewport` ve `RightEyeViewport` aynı noktada çalışır.
+- Her viewport içinde bir kamera + bir video mesh vardır.
+- Tek kamera kaynağı iki viewport’a da basılır.
+- Ana ekrana (`MainDisplayMesh`) varsayılan olarak sol göz tam ekran verilir.
+
+## Godot Ayarları
+
+- Main Scene: `res://scenes/StereoViewScene.tscn`
+
+## External Texture Kaynağı (Android)
+
+Java plugin singleton adı: `QuestExternalTexture`
+
+Godot C# tarafı plugin ile şu çağrıları yapar:
+
+- `configure_external_texture(texture_id, width, height)`
+- `set_stream_url(url)`
+- `start_stream()`
+
+Bu projede fallback yoktur; singleton veya stream yoksa görüntü siyah kalır.
+
+Not: Tablet cihazın yerel kamera erişimi bu akışta kullanılmaz.
+
+## Hızlı Test
+
+1. Laptopta sender başlat:
 
 ```bash
 cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
 ./tools/stream/start_rtsp_sender.sh
 ```
 
-Not: Otomatik kamera seçimi loopback olmayan ilk `/dev/video*` cihazı üzerinden yapılır.
-Gerekirse manuel cihaz: `./tools/stream/start_rtsp_sender.sh /dev/video1`
+Not: Script otomatik olarak loopback olmayan ilk kamera cihazını seçer.
+Manuel cihaz için: `./tools/stream/start_rtsp_sender.sh /dev/video1`
+
+2. `StereoViewScene` çalıştır.
+3. Varsayılan gömülü URL: `rtsp://192.168.2.207:8554/quest3`
+4. Görüntü geliyorsa 3D mesh akışı hazırdır.
+5. Gerekirse inspector’dan:
+   - `EyeTextureShiftPixels`
+   - `EyeTextureZoom`
+   - `CenterOffsetPixels`
+   ayarlarını yap.
+
+## Sender Kontrolü
 
 Durum:
 
@@ -28,17 +4427,364 @@ cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
 ./tools/stream/status_rtsp_sender.sh
 ```
 
-Durdur:
+Durdurma:
 
 ```bash
 cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
 ./tools/stream/stop_rtsp_sender.sh
 ```
 
----
+FFmpeg kurulu değilse:
 
-## FILE: project.godot
+```bash
+sudo apt update
+sudo apt install -y ffmpeg v4l-utils
+```
 
+Docker kurulu/deaktifse:
+
+```bash
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+```
+
+> `usermod` sonrası oturumu kapatıp tekrar aç.
+
+## Ağ/Gecikme Notları
+
+- Bu test internet kotası tüketmez, trafik yerel ağdadır.
+- Wi‑Fi çekimi düşükse gecikme ve kare düşmesi normaldir.
+- 5 GHz, kısa mesafe ve düşük parazit ortamı tercih et.
+- Gerekirse mobil hotspot ile aynı LAN testine geçebilirsin.
+
+## Not
+
+Bu proje yalnızca laptop kaynaklı aynı Wi‑Fi network stream + external texture + 3D mesh gösterim hattını içerir.
+
+```
+
+### FILE: ./.editorconfig
+
+```text
+root = true
+
+[*]
+charset = utf-8
+
+```
+
+### FILE: ./export_presets.cfg
+
+```text
+[preset.0]
+
+name="Quest3"
+platform="Android"
+runnable=true
+dedicated_server=false
+custom_features=""
+export_filter="all_resources"
+include_filter=""
+exclude_filter=""
+export_path="build/android/Quest3-tablet-debug.apk"
+patches=PackedStringArray()
+patch_delta_encoding=false
+patch_delta_compression_level_zstd=19
+patch_delta_min_reduction=0.1
+patch_delta_include_filters="*"
+patch_delta_exclude_filters=""
+encryption_include_filters=""
+encryption_exclude_filters=""
+seed=0
+encrypt_pck=false
+encrypt_directory=false
+script_export_mode=2
+
+[preset.0.options]
+
+custom_template/debug=""
+custom_template/release=""
+gradle_build/use_gradle_build=true
+gradle_build/gradle_build_directory=""
+gradle_build/android_source_template=""
+gradle_build/compress_native_libraries=false
+gradle_build/export_format=0
+gradle_build/min_sdk=""
+gradle_build/target_sdk=""
+gradle_build/custom_theme_attributes={}
+architectures/armeabi-v7a=false
+architectures/arm64-v8a=true
+architectures/x86=false
+architectures/x86_64=false
+version/code=1
+version/name=""
+package/unique_name="com.bnfnc.quest3"
+package/name="Quest3"
+package/signed=true
+package/app_category=2
+package/retain_data_on_uninstall=false
+package/exclude_from_recents=false
+package/show_in_android_tv=false
+package/show_in_app_library=true
+package/show_as_launcher_app=true
+launcher_icons/main_192x192=""
+launcher_icons/adaptive_foreground_432x432=""
+launcher_icons/adaptive_background_432x432=""
+launcher_icons/adaptive_monochrome_432x432=""
+graphics/opengl_debug=false
+shader_baker/enabled=false
+xr_features/xr_mode=0
+gesture/swipe_to_dismiss=false
+screen/immersive_mode=true
+screen/edge_to_edge=false
+screen/support_small=true
+screen/support_normal=true
+screen/support_large=true
+screen/support_xlarge=true
+screen/background_color=Color(0, 0, 0, 1)
+user_data_backup/allow=false
+command_line/extra_args=""
+apk_expansion/enable=false
+apk_expansion/SALT=""
+apk_expansion/public_key=""
+permissions/custom_permissions=PackedStringArray()
+permissions/access_checkin_properties=false
+permissions/access_coarse_location=false
+permissions/access_fine_location=false
+permissions/access_location_extra_commands=false
+permissions/access_media_location=false
+permissions/access_mock_location=false
+permissions/access_network_state=true
+permissions/access_surface_flinger=false
+permissions/access_wifi_state=true
+permissions/account_manager=false
+permissions/add_voicemail=false
+permissions/authenticate_accounts=false
+permissions/battery_stats=false
+permissions/bind_accessibility_service=false
+permissions/bind_appwidget=false
+permissions/bind_device_admin=false
+permissions/bind_input_method=false
+permissions/bind_nfc_service=false
+permissions/bind_notification_listener_service=false
+permissions/bind_print_service=false
+permissions/bind_remoteviews=false
+permissions/bind_text_service=false
+permissions/bind_vpn_service=false
+permissions/bind_wallpaper=false
+permissions/bluetooth=false
+permissions/bluetooth_admin=false
+permissions/bluetooth_privileged=false
+permissions/brick=false
+permissions/broadcast_package_removed=false
+permissions/broadcast_sms=false
+permissions/broadcast_sticky=false
+permissions/broadcast_wap_push=false
+permissions/call_phone=false
+permissions/call_privileged=false
+permissions/camera=false
+permissions/capture_audio_output=false
+permissions/capture_secure_video_output=false
+permissions/capture_video_output=false
+permissions/change_component_enabled_state=false
+permissions/change_configuration=false
+permissions/change_network_state=false
+permissions/change_wifi_multicast_state=false
+permissions/change_wifi_state=false
+permissions/clear_app_cache=false
+permissions/clear_app_user_data=false
+permissions/control_location_updates=false
+permissions/delete_cache_files=false
+permissions/delete_packages=false
+permissions/device_power=false
+permissions/diagnostic=false
+permissions/disable_keyguard=false
+permissions/dump=false
+permissions/expand_status_bar=false
+permissions/factory_test=false
+permissions/flashlight=false
+permissions/force_back=false
+permissions/get_accounts=false
+permissions/get_package_size=false
+permissions/get_tasks=false
+permissions/get_top_activity_info=false
+permissions/global_search=false
+permissions/hardware_test=false
+permissions/inject_events=false
+permissions/install_location_provider=false
+permissions/install_packages=false
+permissions/install_shortcut=false
+permissions/internal_system_window=false
+permissions/internet=true
+permissions/kill_background_processes=false
+permissions/location_hardware=false
+permissions/manage_accounts=false
+permissions/manage_app_tokens=false
+permissions/manage_documents=false
+permissions/manage_external_storage=false
+permissions/manage_media=false
+permissions/master_clear=false
+permissions/media_content_control=false
+permissions/modify_audio_settings=false
+permissions/modify_phone_state=false
+permissions/mount_format_filesystems=false
+permissions/mount_unmount_filesystems=false
+permissions/nfc=false
+permissions/persistent_activity=false
+permissions/post_notifications=false
+permissions/process_outgoing_calls=false
+permissions/read_calendar=false
+permissions/read_call_log=false
+permissions/read_contacts=false
+permissions/read_external_storage=false
+permissions/read_frame_buffer=false
+permissions/read_history_bookmarks=false
+permissions/read_input_state=false
+permissions/read_logs=false
+permissions/read_media_audio=false
+permissions/read_media_images=false
+permissions/read_media_video=false
+permissions/read_media_visual_user_selected=false
+permissions/read_phone_state=false
+permissions/read_profile=false
+permissions/read_sms=false
+permissions/read_social_stream=false
+permissions/read_sync_settings=false
+permissions/read_sync_stats=false
+permissions/read_user_dictionary=false
+permissions/reboot=false
+permissions/receive_boot_completed=false
+permissions/receive_mms=false
+permissions/receive_sms=false
+permissions/receive_wap_push=false
+permissions/record_audio=false
+permissions/reorder_tasks=false
+permissions/restart_packages=false
+permissions/send_respond_via_message=false
+permissions/send_sms=false
+permissions/set_activity_watcher=false
+permissions/set_alarm=false
+permissions/set_always_finish=false
+permissions/set_animation_scale=false
+permissions/set_debug_app=false
+permissions/set_orientation=false
+permissions/set_pointer_speed=false
+permissions/set_preferred_applications=false
+permissions/set_process_limit=false
+permissions/set_time=false
+permissions/set_time_zone=false
+permissions/set_wallpaper=false
+permissions/set_wallpaper_hints=false
+permissions/signal_persistent_processes=false
+permissions/status_bar=false
+permissions/subscribed_feeds_read=false
+permissions/subscribed_feeds_write=false
+permissions/system_alert_window=false
+permissions/transmit_ir=false
+permissions/uninstall_shortcut=false
+permissions/update_device_stats=false
+permissions/use_credentials=false
+permissions/use_sip=false
+permissions/vibrate=false
+permissions/wake_lock=false
+permissions/write_apn_settings=false
+permissions/write_calendar=false
+permissions/write_call_log=false
+permissions/write_contacts=false
+permissions/write_external_storage=false
+permissions/write_gservices=false
+permissions/write_history_bookmarks=false
+permissions/write_profile=false
+permissions/write_secure_settings=false
+permissions/write_settings=false
+permissions/write_sms=false
+permissions/write_social_stream=false
+permissions/write_sync_settings=false
+permissions/write_user_dictionary=false
+dotnet/android_use_linux_bionic=false
+dotnet/include_scripts_content=false
+dotnet/include_debug_symbols=true
+dotnet/embed_build_outputs=false
+
+```
+
+### FILE: ./.gitattributes
+
+```text
+# Normalize EOL for all files that Git considers text files.
+* text=auto eol=lf
+
+```
+
+### FILE: ./.gitignore
+
+```text
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Build/output artifacts
+/build/
+**/bin/
+**/obj/
+
+
+```
+
+### FILE: ./icon.svg.import
+
+```text
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://7h546mijsddk"
+path="res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex"
+metadata={
+"vram_texture": false
+}
+
+[deps]
+
+source_file="res://icon.svg"
+dest_files=["res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/uastc_level=0
+compress/rdo_quality_loss=0.0
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=false
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/channel_remap/red=0
+process/channel_remap/green=1
+process/channel_remap/blue=2
+process/channel_remap/alpha=3
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1
+svg/scale=1.0
+editor/scale_with_editor_scale=false
+editor/convert_colors_with_editor_theme=false
+
+```
+
+### FILE: ./project.godot
+
+```text
 ; Engine configuration file.
 ; It's best edited using the editor UI and not directly,
 ; since the parameters that go here are not all obvious.
@@ -69,10 +4815,11 @@ project/assembly_name="Quest3"
 rendering_device/driver.windows="d3d12"
 textures/vram_compression/import_etc2_astc=true
 
----
+```
 
-## FILE: Quest3.csproj
+### FILE: ./Quest3.csproj
 
+```text
 <Project Sdk="Godot.NET.Sdk/4.6.0">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -82,10 +4829,185 @@ textures/vram_compression/import_etc2_astc=true
   </PropertyGroup>
 </Project>
 
----
+```
 
-## FILE: scenes/StereoViewScene.tscn
+### FILE: ./quest-3.sln
 
+```text
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quest3", "Quest3.csproj", "{B3B331F8-03C4-8D22-B589-99C471E8B45D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B3B331F8-03C4-8D22-B589-99C471E8B45D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3B331F8-03C4-8D22-B589-99C471E8B45D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3B331F8-03C4-8D22-B589-99C471E8B45D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3B331F8-03C4-8D22-B589-99C471E8B45D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {344F8A8D-4656-45DD-8237-436865AC5222}
+	EndGlobalSection
+EndGlobal
+
+```
+
+### FILE: ./README.md
+
+```text
+# Quest3 Godot Project (3D Stereo + External Texture)
+
+Bu proje, **2D split/overlay kullanmadan** kamera görüntüsünü 3D uzayda mesh üzerine basarak stereo üretmek için düzenlenmiştir.
+
+## Mimari Özeti
+
+- Ana sahne: `res://scenes/StereoViewScene.tscn`
+  - `Node3D` tabanlıdır (2D UI yok).
+  - Aynı noktada çalışan iki `SubViewport` içerir:
+    - `LeftEyeViewport`
+    - `RightEyeViewport`
+  - Her viewport kendi 3D mesh’ine aynı kamera kaynağını basar.
+  - Ana (default) ekranda tam ekran olarak tek göz çıktısı (`UseLeftEyeForMainDisplay`) gösterilir.
+
+- Ana script: `scripts/stereo/Stereo3DViewer.cs`
+  - Android singleton bridge: `QuestExternalTexture`
+  - Akış: `configure_external_texture(texture_id, w, h)` + `set_stream_url(url)` + `start_stream()`
+  - Fallback: RTSP/HLS arasında otomatik geçiş (ilk URL başarısızsa alternatif protokol denenir)
+  - Stereo UV shift/zoom ayarları shader ile uygulanır.
+
+## Bu Akışta Neler Yok?
+
+- Ek media middleware yok; yalnız network external texture hattı var.
+- Tablet cihazın yerel kamera erişimi yok.
+- Ortada çizgi/debug yazısı gibi 2D overlay yok.
+
+## Hızlı Başlangıç
+
+1. Projeyi Godot’ta aç.
+2. Laptopta tüm canlı test altyapısını tek komutla başlat:
+
+  ```bash
+  cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+  ./start.sh
+  ```
+
+  Bu komut sender + RTSP server başlatır, uygun olduğunda log pencerelerini açar.
+
+  Dilersen yalnız sender scriptini de doğrudan çalıştırabilirsin:
+
+  ```bash
+  cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+  ./tools/stream/start_rtsp_sender.sh
+  ```
+
+  Not: Script otomatik olarak ilk uygun (loopback olmayan) kamera cihazını seçer.
+  Gerekirse manuel cihaz verebilirsin: `./tools/stream/start_rtsp_sender.sh /dev/video1`
+
+3. Ana sahneyi çalıştır: `res://scenes/StereoViewScene.tscn`
+4. Sahnede gömülü URL:
+
+  - `rtsp://192.168.2.207:8554/quest3` (başarısız olursa otomatik HLS denenir)
+
+  IP değişirse `NetworkStreamUrl` değerini yeni laptop IP ile güncelle.
+5. Android plugin tarafında `QuestExternalTexture` singleton'ı aktif olmalı.
+
+## Sender Kontrol Komutları (Laptop)
+
+Durum:
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/stream/status_rtsp_sender.sh
+```
+
+Tam kapatma (önerilen):
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./stop.sh
+```
+
+Versiyonlu APK üretimi (sıralı klasör):
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./build_versioned_apk.sh
+```
+
+Bu komut her çalışmada `build/android/releases/` altında sıradaki klasörü oluşturur
+(`v1.0.1`, `v1.0.2`, ...), APK'yı içine koyar ve ayrıca güncel kopyayı
+`build/android/Quest3-tablet-debug.apk` yoluna da yazar.
+
+Wi‑Fi ADB log bağlantısı (yardımcı script):
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/adb/connect_wifi_adb.sh
+```
+
+Bu script pair/connect adımlarını sorar ve son endpoint'i kaydeder.
+Ardından canlı başlatma için:
+
+```bash
+./start.sh --camera usb
+```
+
+> Önemli: Komutlarda `<TABLET_IP>` gibi yer tutucuları **olduğu gibi yazma**.
+> Gerçek değerle değiştir (örn: `192.168.2.55:38947`).
+
+Durdur:
+
+```bash
+cd /home/bnfnc/Projects/StereoViewQuest3/quest-3
+./tools/stream/stop_rtsp_sender.sh
+```
+
+FFmpeg kurulu değilse:
+
+```bash
+sudo apt update
+sudo apt install -y ffmpeg v4l-utils
+```
+
+Docker kurulu/deaktifse:
+
+```bash
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+```
+
+> Son komuttan sonra oturumu kapatıp tekrar aç.
+
+## Ağ Notu (Wi‑Fi / Hotspot)
+
+- Bu akış **aynı yerel ağ** (LAN) içinde çalışır, internet kotası tüketmez.
+- Wi‑Fi sinyali zayıfsa gecikme/artifakt olabilir.
+- Gecikmeyi azaltmak için:
+  - mümkünse 5 GHz kullan,
+  - cihazları AP/router’a yakın tut,
+  - gerekirse mobil hotspot ile kısa mesafe test yap.
+
+## Not
+
+- Quest3 hedefi için bu yapı VR’ye uygun 3D sahne temeli sağlar.
+- Bu projede **yalnızca external texture** hedeflenir; Android singleton yoksa görüntü gelmez.
+
+```
+
+### FILE: ./scenes/StereoViewScene.tscn
+
+```text
 [gd_scene format=3 uid="uid://fbrnmf23wfff"]
 
 [ext_resource type="Script" path="res://scripts/stereo/Stereo3DViewer.cs" id="1_stereo"]
@@ -103,7 +5025,10 @@ size = Vector2(1, 1)
 script = ExtResource("1_stereo")
 StartOnReady = true
 AndroidCameraSingletonName = "QuestExternalTexture"
-NetworkStreamUrl = "rtsp://192.168.2.207:8554/quest3"
+NetworkStreamUrl = "http://192.168.2.207:8888/quest3/index.m3u8"
+EnableRtspToHlsFallback = true
+HlsPort = 8888
+RtspPort = 8554
 StreamWidth = 1280
 StreamHeight = 720
 AutoStartStream = true
@@ -152,10 +5077,11 @@ fov = 75.0
 mesh = SubResource("2_quad_right")
 position = Vector3(0, 0, -2)
 
----
+```
 
-## FILE: scripts/stereo/Stereo3DViewer.cs
+### FILE: ./scripts/stereo/Stereo3DViewer.cs
 
+```text
 using Godot;
 using System;
 
@@ -165,6 +5091,9 @@ public partial class Stereo3DViewer : Node3D
     [Export] public bool StartOnReady = true;
     [Export] public string AndroidCameraSingletonName = "QuestExternalTexture";
     [Export] public string NetworkStreamUrl = "";
+    [Export] public bool EnableRtspToHlsFallback = true;
+    [Export] public int HlsPort = 8888;
+    [Export] public int RtspPort = 8554;
     [Export] public int StreamWidth = 1280;
     [Export] public int StreamHeight = 720;
     [Export] public bool AutoStartStream = true;
@@ -217,11 +5146,17 @@ public partial class Stereo3DViewer : Node3D
     private bool _pluginConfigured;
     private float _reconnectTimer;
     private float _streamHealthTimer;
+    private string _activeStreamUrl = string.Empty;
+    private bool _fallbackActivated;
+    private ulong _lastStartRequestAtMs;
+    private ulong _lastRestartAtMs;
     private Vector2I _lastViewportSize = Vector2I.Zero;
     private ulong _nextSourceWarnAtMs;
 
     private const float SOURCE_RECONNECT_INTERVAL_SEC = 0.5f;
     private const ulong SOURCE_WARN_THROTTLE_MS = 3000;
+    private const ulong STREAM_START_GRACE_MS = 12000;
+    private const ulong STREAM_RESTART_COOLDOWN_MS = 2500;
 
     private const string SOURCE_SHADER_CODE = @"
 shader_type spatial;
@@ -270,6 +5205,10 @@ void fragment() {
 
         _sessionActive = true;
         _pluginConfigured = false;
+        _activeStreamUrl = (NetworkStreamUrl ?? string.Empty).Trim();
+        _fallbackActivated = false;
+        _lastStartRequestAtMs = 0;
+        _lastRestartAtMs = 0;
         _streamHealthTimer = 0f;
         _sourceConnected = ConnectSourceTexture();
         if (!_sourceConnected)
@@ -283,6 +5222,10 @@ void fragment() {
         _pluginConfigured = false;
         _reconnectTimer = 0f;
         _streamHealthTimer = 0f;
+        _activeStreamUrl = string.Empty;
+        _fallbackActivated = false;
+        _lastStartRequestAtMs = 0;
+        _lastRestartAtMs = 0;
 
         StopPluginStream();
         _externalTexture = null;
@@ -316,6 +5259,15 @@ void fragment() {
     public override void _ExitTree()
     {
         StopSession();
+    }
+
+    public void SetExternalTexture(Texture2D texture)
+    {
+        if (texture == null)
+            return;
+
+        _sourceConnected = true;
+        ApplySourceTexture(texture);
     }
 
     private void ResolveSceneNodes()
@@ -549,14 +5501,14 @@ void fragment() {
 
         _pluginConfigured = true;
 
-        if (!string.IsNullOrWhiteSpace(NetworkStreamUrl))
-            CallPluginBool("set_stream_url", NetworkStreamUrl);
+        if (!AutoStartStream && !string.IsNullOrWhiteSpace(GetEffectiveStreamUrl()))
+            CallPluginBool("set_stream_url", GetEffectiveStreamUrl());
 
         if (AutoStartStream)
             StartPluginStream();
 
         ApplySourceTexture(_externalTexture);
-        GD.Print($"[Stereo3D] External texture bridge hazır. texture_id={externalTextureId}, stream='{NetworkStreamUrl}'");
+        GD.Print($"[Stereo3D] External texture bridge hazır. texture_id={externalTextureId}, stream='{GetEffectiveStreamUrl()}'");
         return true;
     }
 
@@ -572,8 +5524,24 @@ void fragment() {
         _streamHealthTimer = 0f;
 
         bool active = CallPluginBool("is_stream_active");
-        if (!active)
-            StartPluginStream();
+        if (active)
+            return;
+
+        string pluginError = TryGetPluginLastError();
+        ulong now = Time.GetTicksMsec();
+        bool insideStartGrace = _lastStartRequestAtMs > 0 && (now - _lastStartRequestAtMs) < STREAM_START_GRACE_MS;
+        bool streamStarting = CallPluginBool("is_stream_starting");
+
+        // MediaPlayer prepareAsync aşamasında kısa süre inactive dönebilir.
+        if (insideStartGrace && (streamStarting || string.IsNullOrWhiteSpace(pluginError)))
+            return;
+
+        if (_lastRestartAtMs > 0 && (now - _lastRestartAtMs) < STREAM_RESTART_COOLDOWN_MS)
+            return;
+
+        TryActivateStreamFallback(pluginError);
+        _lastRestartAtMs = now;
+        StartPluginStream();
     }
 
     private void StartPluginStream()
@@ -581,30 +5549,108 @@ void fragment() {
         if (_androidPluginSingleton == null || !_pluginConfigured)
             return;
 
-        if (string.IsNullOrWhiteSpace(NetworkStreamUrl))
+        for (int attempt = 0; attempt < 2; attempt++)
         {
-            WarnSourceOnce("[Stereo3D] NetworkStreamUrl boş. Stream başlatılamıyor.");
-            return;
-        }
+            string streamUrl = GetEffectiveStreamUrl();
+            if (string.IsNullOrWhiteSpace(streamUrl))
+            {
+                WarnSourceOnce("[Stereo3D] NetworkStreamUrl boş. Stream başlatılamıyor.");
+                return;
+            }
 
-        bool urlOk = CallPluginBool("set_stream_url", NetworkStreamUrl);
-        if (!urlOk)
-        {
-            string pluginError = TryGetPluginLastError();
-            WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
-                ? "[Stereo3D] set_stream_url başarısız."
-                : $"[Stereo3D] set_stream_url hatası: {pluginError}");
-            return;
-        }
+            bool urlOk = CallPluginBool("set_stream_url", streamUrl);
+            if (!urlOk)
+            {
+                string pluginError = TryGetPluginLastError();
+                if (TryActivateStreamFallback(pluginError))
+                    continue;
 
-        bool startAccepted = CallPluginBool("start_stream");
-        if (!startAccepted)
-        {
-            string pluginError = TryGetPluginLastError();
-            WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
+                WarnSourceOnce(string.IsNullOrWhiteSpace(pluginError)
+                    ? "[Stereo3D] set_stream_url başarısız."
+                    : $"[Stereo3D] set_stream_url hatası: {pluginError}");
+                return;
+            }
+
+            bool startAccepted = CallPluginBool("start_stream");
+            if (startAccepted)
+            {
+                _lastStartRequestAtMs = Time.GetTicksMsec();
+                return;
+            }
+
+            string startError = TryGetPluginLastError();
+            if (TryActivateStreamFallback(startError))
+                continue;
+
+            WarnSourceOnce(string.IsNullOrWhiteSpace(startError)
                 ? "[Stereo3D] start_stream başarısız."
-                : $"[Stereo3D] start_stream hatası: {pluginError}");
+                : $"[Stereo3D] start_stream hatası: {startError}");
+            return;
         }
+    }
+
+    private string GetEffectiveStreamUrl()
+    {
+        if (!string.IsNullOrWhiteSpace(_activeStreamUrl))
+            return _activeStreamUrl;
+
+        _activeStreamUrl = (NetworkStreamUrl ?? string.Empty).Trim();
+        return _activeStreamUrl;
+    }
+
+    private bool TryActivateStreamFallback(string reason)
+    {
+        if (!EnableRtspToHlsFallback || _fallbackActivated)
+            return false;
+
+        string current = GetEffectiveStreamUrl();
+        if (string.IsNullOrWhiteSpace(current))
+            return false;
+
+        if (!Uri.TryCreate(current, UriKind.Absolute, out Uri uri))
+            return false;
+
+        string host = uri.Host;
+        if (string.IsNullOrWhiteSpace(host))
+            return false;
+
+        string path = uri.AbsolutePath?.Trim('/') ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(path))
+            path = "quest3";
+
+        string fallbackUrl;
+
+        if (string.Equals(uri.Scheme, "rtsp", StringComparison.OrdinalIgnoreCase))
+        {
+            int hlsPort = HlsPort > 0 ? HlsPort : 8888;
+            fallbackUrl = $"http://{host}:{hlsPort}/{path}/index.m3u8";
+        }
+        else if (string.Equals(uri.Scheme, "http", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+        {
+            const string indexSuffix = "index.m3u8";
+            if (path.EndsWith(indexSuffix, StringComparison.OrdinalIgnoreCase))
+                path = path.Substring(0, path.Length - indexSuffix.Length).TrimEnd('/');
+
+            if (string.IsNullOrWhiteSpace(path))
+                path = "quest3";
+
+            int rtspPort = RtspPort > 0 ? RtspPort : 8554;
+            fallbackUrl = $"rtsp://{host}:{rtspPort}/{path}";
+        }
+        else
+        {
+            return false;
+        }
+
+        if (string.Equals(current, fallbackUrl, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        _activeStreamUrl = fallbackUrl;
+        _fallbackActivated = true;
+
+        GD.Print($"[Stereo3D] Stream fallback aktif: {_activeStreamUrl}. reason='{reason}'");
+        return true;
     }
 
     private void StopPluginStream()
@@ -764,422 +5810,51 @@ void fragment() {
         _nextSourceWarnAtMs = now + SOURCE_WARN_THROTTLE_MS;
         GD.PrintErr(message);
     }
+
 }
 
----
+```
 
-## FILE: android/build/src/main/java/com/godot/game/GodotApp.java
+### FILE: ./scripts/stereo/Stereo3DViewer.cs.uid
 
-/**************************************************************************/
-/*  GodotApp.java                                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
-/**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
+```text
+uid://datsm60sv5flt
 
-package com.godot.game;
+```
 
-import org.godotengine.godot.Godot;
-import org.godotengine.godot.GodotActivity;
-import org.godotengine.godot.plugin.GodotPlugin;
+### FILE: ./.vscode/settings.json
 
-import android.os.Bundle;
-import android.util.Log;
-
-import androidx.activity.EdgeToEdge;
-import androidx.core.splashscreen.SplashScreen;
-
-import java.util.HashSet;
-import java.util.Set;
-
-public class GodotApp extends GodotActivity {
-    static {
-        if (BuildConfig.FLAVOR.equals("mono")) {
-            try {
-                Log.v("GODOT", "Loading System.Security.Cryptography.Native.Android library");
-                System.loadLibrary("System.Security.Cryptography.Native.Android");
-            } catch (UnsatisfiedLinkError e) {
-                Log.e("GODOT", "Unable to load System.Security.Cryptography.Native.Android library");
-            }
-        }
-    }
-
-    private final Runnable updateWindowAppearance = () -> {
-        Godot godot = getGodot();
-        if (godot != null) {
-            godot.enableImmersiveMode(godot.isInImmersiveMode(), true);
-            godot.enableEdgeToEdge(godot.isInEdgeToEdgeMode(), true);
-            godot.setSystemBarsAppearance();
-        }
-    };
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        SplashScreen.installSplashScreen(this);
-        EdgeToEdge.enable(this);
-        super.onCreate(savedInstanceState);
-    }
-
-    @Override
-    public Set<GodotPlugin> getHostPlugins(Godot godot) {
-        Set<GodotPlugin> plugins = new HashSet<>(super.getHostPlugins(godot));
-        plugins.add(new QuestExternalTexture(godot));
-        return plugins;
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        updateWindowAppearance.run();
-    }
-
-    @Override
-    public void onGodotMainLoopStarted() {
-        super.onGodotMainLoopStarted();
-        runOnUiThread(updateWindowAppearance);
-    }
-
-    @Override
-    public void onGodotForceQuit(Godot instance) {
-        if (!BuildConfig.FLAVOR.equals("instrumented")) {
-            super.onGodotForceQuit(instance);
-        }
-    }
+```text
+{
+  "files.watcherExclude": {
+    "**/.godot/**": true,
+    "**/.mono/**": true,
+    "**/bin/**": true,
+    "**/obj/**": true
+  },
+  "search.exclude": {
+    "**/.godot/**": true,
+    "**/.mono/**": true,
+    "**/bin/**": true,
+    "**/obj/**": true
+  },
+  "files.exclude": {
+    "**/.godot/": true
+  },
+  "files.associations": {
+    "**/android/build/src/main/java/com/godot/game/GodotApp.java": "plaintext",
+    "**/android/build/src/main/java/com/godot/game/QuestExternalTexture.java": "plaintext"
+  },
+  "java.project.sourcePaths": [
+    "android/build/src/main/java"
+  ],
+  "java.project.outputPath": "android/.vscode-java-bin",
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.metadata/**",
+    "**/archetype-resources/**",
+    "**/META-INF/maven/**"
+  ]
 }
 
----
-
-## FILE: android/build/src/main/java/com/godot/game/QuestExternalTexture.java
-
-package com.godot.game;
-
-import android.graphics.SurfaceTexture;
-import android.media.MediaPlayer;
-import android.net.Uri;
-import android.util.Log;
-import android.view.Surface;
-
-import org.godotengine.godot.Godot;
-import org.godotengine.godot.plugin.GodotPlugin;
-import org.godotengine.godot.plugin.UsedByGodot;
-
-import java.io.IOException;
-
-import javax.microedition.khronos.opengles.GL10;
-
-public class QuestExternalTexture extends GodotPlugin {
-
-    private static final String TAG = "QuestExternalTexture";
-
-    private final Object lock = new Object();
-
-    private SurfaceTexture surfaceTexture;
-    private Surface surface;
-    private MediaPlayer mediaPlayer;
-
-    private int externalTextureId = -1;
-    private int textureWidth = 1280;
-    private int textureHeight = 720;
-
-    private volatile boolean frameAvailable = false;
-    private volatile boolean streamActive = false;
-    private volatile boolean playerPrepared = false;
-    private volatile String lastError = "";
-    private volatile String streamUrl = "";
-
-    public QuestExternalTexture(Godot godot) {
-        super(godot);
-    }
-
-    @Override
-    public String getPluginName() {
-        return "QuestExternalTexture";
-    }
-
-    @UsedByGodot
-    public boolean configure_external_texture(long textureId, int width, int height) {
-        int glTextureId = (int) textureId;
-        if (glTextureId <= 0) {
-            setLastError("Geçersiz external texture id: " + textureId);
-            return false;
-        }
-
-        synchronized (lock) {
-            releaseSurfaceLocked();
-
-            externalTextureId = glTextureId;
-            textureWidth = Math.max(16, width);
-            textureHeight = Math.max(16, height);
-
-            try {
-                surfaceTexture = new SurfaceTexture(externalTextureId);
-                surfaceTexture.setDefaultBufferSize(textureWidth, textureHeight);
-                surfaceTexture.setOnFrameAvailableListener(texture -> frameAvailable = true);
-                surface = new Surface(surfaceTexture);
-                frameAvailable = false;
-                streamActive = false;
-                playerPrepared = false;
-                clearLastError();
-                Log.i(TAG, "External texture configure edildi. id=" + externalTextureId + " size=" + textureWidth + "x" + textureHeight);
-                return true;
-            } catch (Throwable t) {
-                setLastError("SurfaceTexture oluşturma hatası: " + t.getMessage());
-                releaseSurfaceLocked();
-                return false;
-            }
-        }
-    }
-
-    @UsedByGodot
-    public boolean set_stream_url(String url) {
-        if (url == null) {
-            setLastError("Stream URL null olamaz.");
-            return false;
-        }
-
-        String trimmed = url.trim();
-        if (trimmed.isEmpty()) {
-            setLastError("Stream URL boş olamaz.");
-            return false;
-        }
-
-        synchronized (lock) {
-            streamUrl = trimmed;
-            clearLastError();
-        }
-
-        return true;
-    }
-
-    @UsedByGodot
-    public boolean start_stream() {
-        synchronized (lock) {
-            if (surface == null) {
-                setLastError("Surface hazır değil. Önce configure_external_texture çağrılmalı.");
-                return false;
-            }
-            if (streamUrl == null || streamUrl.isEmpty()) {
-                setLastError("Stream URL ayarlanmamış.");
-                return false;
-            }
-        }
-
-        runOnUiThread(this::startStreamOnUiThread);
-        return true;
-    }
-
-    private void startStreamOnUiThread() {
-        synchronized (lock) {
-            try {
-                stopMediaPlayerLocked();
-
-                mediaPlayer = new MediaPlayer();
-                mediaPlayer.setLooping(true);
-                mediaPlayer.setVolume(0f, 0f);
-                mediaPlayer.setScreenOnWhilePlaying(false);
-                mediaPlayer.setSurface(surface);
-
-                mediaPlayer.setOnPreparedListener(mp -> {
-                    synchronized (lock) {
-                        playerPrepared = true;
-                        streamActive = true;
-                        clearLastError();
-                    }
-                    try {
-                        mp.start();
-                    } catch (IllegalStateException e) {
-                        setLastError("MediaPlayer start hatası: " + e.getMessage());
-                    }
-                });
-
-                mediaPlayer.setOnCompletionListener(mp -> {
-                    synchronized (lock) {
-                        streamActive = false;
-                        playerPrepared = false;
-                    }
-                });
-
-                mediaPlayer.setOnErrorListener((mp, what, extra) -> {
-                    synchronized (lock) {
-                        streamActive = false;
-                        playerPrepared = false;
-                        setLastError("MediaPlayer error what=" + what + " extra=" + extra);
-                    }
-                    return true;
-                });
-
-                mediaPlayer.setOnInfoListener((mp, what, extra) -> false);
-                mediaPlayer.setOnVideoSizeChangedListener((mp, w, h) -> {
-                    synchronized (lock) {
-                        textureWidth = Math.max(16, w);
-                        textureHeight = Math.max(16, h);
-                        if (surfaceTexture != null) {
-                            try {
-                                surfaceTexture.setDefaultBufferSize(textureWidth, textureHeight);
-                            } catch (Throwable ignored) {
-                            }
-                        }
-                    }
-                });
-
-                mediaPlayer.setDataSource(getContext(), Uri.parse(streamUrl));
-                mediaPlayer.prepareAsync();
-            } catch (IOException | IllegalArgumentException | IllegalStateException e) {
-                streamActive = false;
-                playerPrepared = false;
-                setLastError("Stream başlatma hatası: " + e.getMessage());
-                stopMediaPlayerLocked();
-            }
-        }
-    }
-
-    @UsedByGodot
-    public void stop_stream() {
-        runOnUiThread(this::stopStreamOnUiThread);
-    }
-
-    private void stopStreamOnUiThread() {
-        synchronized (lock) {
-            stopMediaPlayerLocked();
-            streamActive = false;
-            playerPrepared = false;
-            frameAvailable = false;
-        }
-    }
-
-    @UsedByGodot
-    public boolean is_stream_active() {
-        return streamActive;
-    }
-
-    @UsedByGodot
-    public String get_last_error() {
-        return lastError == null ? "" : lastError;
-    }
-
-    @Override
-    public void onGLDrawFrame(GL10 gl) {
-        SurfaceTexture st = surfaceTexture;
-        if (st == null || !frameAvailable) {
-            return;
-        }
-
-        try {
-            st.updateTexImage();
-            frameAvailable = false;
-        } catch (Throwable t) {
-            setLastError("updateTexImage hatası: " + t.getMessage());
-        }
-    }
-
-    @Override
-    public void onMainPause() {
-        super.onMainPause();
-        stop_stream();
-    }
-
-    @Override
-    public void onMainDestroy() {
-        super.onMainDestroy();
-        runOnUiThread(() -> {
-            synchronized (lock) {
-                stopMediaPlayerLocked();
-                releaseSurfaceLocked();
-                streamActive = false;
-                playerPrepared = false;
-                frameAvailable = false;
-            }
-        });
-    }
-
-    private void stopMediaPlayerLocked() {
-        if (mediaPlayer == null) {
-            return;
-        }
-
-        try {
-            mediaPlayer.setSurface(null);
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            if (playerPrepared || mediaPlayer.isPlaying()) {
-                mediaPlayer.stop();
-            }
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            mediaPlayer.reset();
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            mediaPlayer.release();
-        } catch (Throwable ignored) {
-        }
-
-        mediaPlayer = null;
-        playerPrepared = false;
-    }
-
-    private void releaseSurfaceLocked() {
-        if (surface != null) {
-            try {
-                surface.release();
-            } catch (Throwable ignored) {
-            }
-            surface = null;
-        }
-
-        if (surfaceTexture != null) {
-            try {
-                surfaceTexture.release();
-            } catch (Throwable ignored) {
-            }
-            surfaceTexture = null;
-        }
-    }
-
-    private void clearLastError() {
-        lastError = "";
-    }
-
-    private void setLastError(String message) {
-        lastError = message == null ? "" : message;
-        Log.e(TAG, lastError);
-    }
-}
-
----
-
-## FILE: export_presets.cfg (ilgili kısım)
-
-[preset.0.options]
-permissions/access_network_state=true
-permissions/access_wifi_state=true
-permissions/internet=true
-permissions/camera=false
+```

@@ -12,7 +12,10 @@ config_version=5
 
 config/name="Quest3"
 run/main_scene="res://scenes/StereoViewScene.tscn"
-config/features=PackedStringArray("4.6", "C#", "Forward Plus")
+; FIX: "Forward Plus" → "Mobile" — Android / Quest cihazlarda Forward Plus
+; ExternalTexture GL id'sini geçersiz kılıyor ve siyah ekrana yol açıyor.
+; Mobile renderer Vulkan mobile / GLES3 ile çalışır ve ExternalTexture'ı destekler.
+config/features=PackedStringArray("4.6", "C#", "Mobile")
 config/icon="res://icon.svg"
 
 [dotnet]
@@ -25,5 +28,9 @@ project/assembly_name="Quest3"
 
 [rendering]
 
-rendering_device/driver.windows="d3d12"
+; FIX: d3d12 Windows geliştirme ortamı içindi, Android'de sorun çıkarabilir.
+; Yorum satırı yapıldı — Godot Android'de otomatik Vulkan/GLES3 seçer.
+; rendering_device/driver.windows="d3d12"
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
 textures/vram_compression/import_etc2_astc=true

@@ -16,27 +16,88 @@ FPS="${FPS:-15}"
 MEDIAMTX_CONTAINER="${MEDIAMTX_CONTAINER:-quest3-mediamtx}"
 MEDIAMTX_IMAGE="${MEDIAMTX_IMAGE:-bluenviron/mediamtx:latest}"
 AUDIO_ENABLE="${AUDIO_ENABLE:-1}"
+CAMERA_LABEL=""
 
-if [[ -z "$CAMERA_DEVICE" ]] && command -v v4l2-ctl >/dev/null 2>&1; then
-    CAMERA_DEVICE="$(v4l2-ctl --list-devices 2>/dev/null | awk '
-        BEGIN { in_loopback = 0 }
-        /^[^ \t].*:$/ {
-            line = tolower($0)
-            in_loopback = (line ~ /v4l2loopback/)
-            next
-        }
-        /^[ \t]*\/dev\/video[0-9]+/ {
-            if (!in_loopback) {
-                print $1
-                exit
-            }
-        }
-    ')"
+is_capture_device() {
+    local dev="$1"
+
+    if command -v v4l2-ctl >/dev/null 2>&1; then
+        v4l2-ctl -d "$dev" --list-formats-ext >/dev/null 2>&1
+    else
+        [[ -c "$dev" ]]
+    fi
+}
+
+get_device_label() {
+    local dev="$1"
+
+    if command -v udevadm >/dev/null 2>&1; then
+        local label
+        label="$(udevadm info --query=property --name="$dev" 2>/dev/null | awk -F= '/^ID_V4L_PRODUCT=/{print $2; exit}')"
+        if [[ -n "$label" ]]; then
+            echo "$label"
+            return
+        fi
+    fi
+
+    echo "$(basename "$dev")"
+}
+
+auto_select_camera_device() {
+    local preferred=""
+    local fallback=""
+
+    shopt -s nullglob
+    for dev in /dev/video*; do
+        [[ -c "$dev" ]] || continue
+        is_capture_device "$dev" || continue
+
+        local props product product_lc
+        props="$(udevadm info --query=property --name="$dev" 2>/dev/null || true)"
+        product="$(awk -F= '/^ID_V4L_PRODUCT=/{print $2; exit}' <<< "$props")"
+        product_lc="$(tr '[:upper:]' '[:lower:]' <<< "${product}")"
+
+        if grep -Eiq 'loopback|v4l2loopback' <<< "$product_lc"; then
+            continue
+        fi
+
+        if [[ -z "$fallback" ]]; then
+            fallback="$dev"
+        fi
+
+        if grep -q '^ID_BUS=usb$' <<< "$props"; then
+            if ! grep -Eiq 'integrated|mipi|internal|built-?in' <<< "$product_lc"; then
+                preferred="$dev"
+                break
+            fi
+        fi
+    done
+    shopt -u nullglob
+
+    if [[ -n "$preferred" ]]; then
+        echo "$preferred"
+        return
+    fi
+
+    if [[ -n "$fallback" ]]; then
+        echo "$fallback"
+        return
+    fi
+}
+
+if [[ "$CAMERA_DEVICE" == "usb" || "$CAMERA_DEVICE" == "auto-usb" ]]; then
+    CAMERA_DEVICE=""
+fi
+
+if [[ -z "$CAMERA_DEVICE" ]]; then
+    CAMERA_DEVICE="$(auto_select_camera_device || true)"
 fi
 
 if [[ -z "$CAMERA_DEVICE" ]]; then
     CAMERA_DEVICE="/dev/video1"
 fi
+
+CAMERA_LABEL="$(get_device_label "$CAMERA_DEVICE")"
 
 if ! command -v ffmpeg >/dev/null 2>&1; then
     echo "[sender] ffmpeg bulunamadı."
@@ -185,7 +246,7 @@ else
 fi
 
 echo "[sender] Başlatılıyor..."
-echo "[sender] Kamera cihazı: $CAMERA_DEVICE"
+echo "[sender] Kamera cihazı: $CAMERA_DEVICE ($CAMERA_LABEL)"
 nohup ffmpeg \
     -hide_banner \
     -loglevel info \
